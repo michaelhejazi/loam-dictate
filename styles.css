@@ -1,0 +1,173 @@
+/* Loam Dictate — the sheet. Obsidian's own variables only, so it follows the theme.
+   design/dictate-sheet.html is the drawing this follows. */
+
+.loam-dictate-modal .modal-content.loam-dictate {
+	padding-top: 4px;
+}
+
+.loam-dictate-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 4px;
+}
+.loam-dictate-state {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: var(--font-semibold);
+}
+.loam-dictate-into {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+}
+.loam-dictate-into b {
+	color: var(--text-normal);
+	font-weight: var(--font-medium);
+}
+
+.loam-dictate-dot {
+	width: 9px;
+	height: 9px;
+	flex: none;
+	border-radius: 50%;
+	background: var(--color-red);
+	box-shadow: 0 0 0 4px rgba(var(--color-red-rgb), 0.18);
+}
+.loam-dictate-dot.is-amber {
+	background: var(--color-orange);
+	box-shadow: 0 0 0 4px rgba(var(--color-orange-rgb), 0.18);
+}
+.loam-dictate-dot.is-quiet {
+	background: var(--text-faint);
+	box-shadow: none;
+}
+.loam-dictate-spin {
+	width: 14px;
+	height: 14px;
+	flex: none;
+	border-radius: 50%;
+	border: 2px solid var(--background-modifier-border);
+	border-top-color: var(--interactive-accent);
+	animation: loam-dictate-spin 0.9s linear infinite;
+}
+@keyframes loam-dictate-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.loam-dictate-clock {
+	text-align: center;
+	margin: 18px 0 6px;
+	font-variant-numeric: tabular-nums;
+}
+.loam-dictate-big {
+	font-size: 44px;
+	font-weight: 300;
+	line-height: 1;
+}
+.loam-dictate-cap {
+	font-size: var(--font-ui-small);
+	color: var(--text-faint);
+	margin-left: 6px;
+}
+.loam-dictate-clock.is-amber .loam-dictate-big {
+	color: var(--color-orange);
+}
+.loam-dictate-clock.is-faint .loam-dictate-big {
+	color: var(--text-faint);
+}
+
+/* The canvas draws in its own `color`. */
+.loam-dictate-wave {
+	display: block;
+	width: 100%;
+	height: 54px;
+	margin: 10px 0 16px;
+	color: var(--interactive-accent);
+}
+.loam-dictate-wave.is-frozen {
+	color: var(--text-faint);
+	opacity: 0.6;
+}
+
+.loam-dictate-hint {
+	text-align: center;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	margin: 0 0 16px;
+}
+.loam-dictate-hint.is-amber {
+	color: var(--color-orange);
+}
+
+.loam-dictate-actions {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+.loam-dictate-btn {
+	flex: 1;
+	min-height: 44px;
+	border-radius: var(--radius-m);
+	font-weight: var(--font-semibold);
+}
+.loam-dictate-btn.is-primary {
+	flex: 1.6;
+}
+.loam-dictate-btn.is-quiet:not(.mod-cta) {
+	background: transparent;
+	box-shadow: none;
+	border: 1px solid var(--background-modifier-border);
+}
+.loam-dictate-btn.is-danger {
+	color: var(--text-error);
+}
+
+/* The words: the whole take is readable, so the card scrolls rather than fading out. */
+.loam-dictate-text {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-secondary);
+	padding: 12px 14px;
+	font-family: var(--font-text);
+	line-height: 1.55;
+	max-height: 40vh;
+	overflow-y: auto;
+	margin: 12px 0 8px;
+	white-space: pre-wrap;
+	user-select: text;
+}
+.loam-dictate-meta {
+	display: flex;
+	justify-content: space-between;
+	font-size: var(--font-ui-small);
+	color: var(--text-faint);
+	margin: 0 2px 14px;
+}
+.loam-dictate-link {
+	color: var(--text-muted);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.loam-dictate-err {
+	border: 1px solid var(--background-modifier-border);
+	border-left: 3px solid var(--text-error);
+	border-radius: var(--radius-s);
+	padding: 10px 12px;
+	line-height: 1.5;
+	margin: 14px 0 16px;
+	background: var(--background-secondary);
+}
+.loam-dictate-err small {
+	display: block;
+	color: var(--text-muted);
+	margin-top: 4px;
+}

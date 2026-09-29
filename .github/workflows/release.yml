@@ -1,0 +1,48 @@
+# Cuts the GitHub release BRAT installs from, when a version tag is pushed.
+# The tag must equal manifest.json's version exactly (no "v").
+# After the release it records the assets and their sizes as a git note on
+# the tag (refs/notes/release), so the release can be checked with git alone.
+name: Release
+
+on:
+  push:
+    tags: ["*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Tag equals manifest version
+        run: |
+          version=$(node -p "require('./manifest.json').version")
+          test "$version" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != manifest $version"; exit 1; }
+          node -e "const v=require('./versions.json'); if(!v['$version']) { console.error('versions.json lacks $version'); process.exit(1) }"
+      - run: npm test
+      - run: npm run build
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" main.js manifest.json styles.css \
+            --title "$GITHUB_REF_NAME" --notes "Loam Dictate $GITHUB_REF_NAME. Install or update through BRAT."
+      - name: Record the release on the tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          gh release view "$GITHUB_REF_NAME" --json url,assets \
+            --jq '"release " + .url, (.assets[] | "asset " + .name + " " + (.size|tostring) + " bytes")' > note.txt
+          sha256sum main.js manifest.json styles.css | sed 's/^/sha256 /' >> note.txt
+          cat note.txt
+          git fetch origin "refs/notes/release:refs/notes/release" || true
+          git notes --ref=release add -f -F note.txt "$GITHUB_REF_NAME"
+          git push origin refs/notes/release
