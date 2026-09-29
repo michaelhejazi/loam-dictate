@@ -1,6 +1,6 @@
 {
   "name": "loam-dictate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Obsidian plugin: record a take, clean it through a Loam UI server, insert it at the cursor.",
   "private": true,
   "type": "module",

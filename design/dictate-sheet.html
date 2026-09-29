@@ -205,7 +205,7 @@ const states = [
       <div class="hint">Names and terms: 12 · Tap Stop when you're done</div>
       <div class="actions"><span class="btn quiet">Cancel</span><span class="btn primary">Stop</span></div>`) },
 
-  { cap: '<b>3 · Thirty seconds left.</b> Same sheet; the clock and dot turn amber and the phone buzzes once, as the app does. At the cap it stops by itself and goes straight to cleaning.',
+  { cap: '<b>3 · Thirty seconds left.</b> Same sheet; the clock and dot turn amber and the phone gives two firm pulses (src/signals.ts), as the app does. At the cap it stops by itself and goes straight to cleaning.',
     body: note('') + sheet(head('amber', 'Recording') + `
       <div class="clock amber"><span class="big">4:30</span><span class="cap-t">/ 5:00</span></div>
       ${wave(26)}

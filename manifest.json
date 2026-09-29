@@ -1,7 +1,7 @@
 {
 	"id": "loam-dictate",
 	"name": "Loam Dictate",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"minAppVersion": "1.4.0",
 	"description": "Record a spoken take, have your Loam UI server clean it, and insert the words at the cursor.",
 	"author": "Michael Hejazi",

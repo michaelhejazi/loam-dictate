@@ -3,14 +3,18 @@ import { HttpClient, LoamTranscriber } from "./loam";
 import { DictateModal } from "./modal";
 import { mediaRecorderFactory } from "./recorder";
 import { realClock } from "./session";
+import { Signals, browserSignalEnv } from "./signals";
 import { DEFAULT_SETTINGS, LoamDictateSettingTab, LoamDictateSettings, clampMinutes } from "./settings";
 import { Transcriber } from "./transcriber";
 import { buildTerms, parseTermsSetting } from "./vocabulary";
+import { ScreenWake, browserWakeEnv } from "./wakelock";
 
 export default class LoamDictatePlugin extends Plugin {
 	settings: LoamDictateSettings = { ...DEFAULT_SETTINGS };
 	private transcriber!: Transcriber;
 	private open = new Set<DictateModal>();
+	/** Shared by every take, so the settings tab can say how the moments reach this device. */
+	readonly signals = new Signals(browserSignalEnv);
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -72,9 +76,8 @@ export default class LoamDictatePlugin extends Plugin {
 				terms,
 				capMs: clampMinutes(this.settings.maxMinutes) * 60_000,
 				clock: realClock,
-				buzz: () => {
-					if (typeof navigator.vibrate === "function") navigator.vibrate(200);
-				},
+				signal: (m) => this.signals.signal(m),
+				awake: new ScreenWake(browserWakeEnv()),
 			},
 			terms().length,
 			(m) => this.open.delete(m),

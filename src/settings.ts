@@ -1,5 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type LoamDictatePlugin from "./main";
+import type { SignalPath } from "./signals";
 
 export interface LoamDictateSettings {
 	server: string;
@@ -87,6 +88,8 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 					}),
 			);
 
+		containerEl.createEl("p", { cls: "setting-item-description", text: signalLine(this.plugin.signals.path()) });
+
 		new Setting(containerEl)
 			.setName("Names and terms")
 			.setDesc("Names and terms you want spelled right")
@@ -97,5 +100,17 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
+	}
+}
+
+/** One line on how the three moments reach this device; no setting, just what is in use. */
+export function signalLine(path: SignalPath): string {
+	switch (path) {
+		case "vibration":
+			return "Alerts: vibration, a tap when recording starts, two pulses thirty seconds before the longest recording, one long pulse when it stops there.";
+		case "tone: no vibration":
+			return "Alerts: a soft tone thirty seconds before the longest recording and when it stops there, because Obsidian has no vibration on this device.";
+		case "tone: vibration refused":
+			return "Alerts: a soft tone thirty seconds before the longest recording and when it stops there, because this device refused to vibrate for Obsidian.";
 	}
 }

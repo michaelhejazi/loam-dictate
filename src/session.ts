@@ -4,6 +4,7 @@
 // path through it is tested without a device.
 
 import { Recorder, RecorderCancelled, RecorderFactory, Recording, microphoneError } from "./recorder";
+import type { Moment } from "./signals";
 import { Transcriber, TranscribeError } from "./transcriber";
 
 export const WARN_BEFORE_CAP_MS = 30_000;
@@ -40,8 +41,10 @@ export interface SessionDeps {
 	terms: () => string[];
 	capMs: number;
 	clock: Clock;
-	/** Buzz once; a no-op where the platform has no vibration. */
-	buzz: () => void;
+	/** The three moments a walker feels: started, thirty seconds left, stopped at the cap (src/signals.ts). */
+	signal: (moment: Moment) => void;
+	/** Keeps the screen on; held exactly while the phase is recording. */
+	awake: { hold(): void; release(): void };
 }
 
 export class DictationSession {
@@ -109,6 +112,7 @@ export class DictationSession {
 		this.startedAt = this.deps.clock.now();
 		this.stopTicking = this.deps.clock.every(TICK_MS, () => this.tick());
 		this.set({ kind: "recording", elapsedMs: 0, warning: false });
+		this.deps.signal("started");
 	}
 
 	/** Stop: the take goes to be cleaned. */
@@ -185,13 +189,15 @@ export class DictationSession {
 		if (this._phase.kind !== "recording") return;
 		const elapsedMs = this.elapsed();
 		if (elapsedMs >= this.deps.capMs) {
+			// Stopped by the plugin, not by a press: say so once the mic has been told to stop.
 			void this.stop();
+			this.deps.signal("cap");
 			return;
 		}
 		const warning = elapsedMs >= this.deps.capMs - WARN_BEFORE_CAP_MS;
 		if (warning && !this.warned) {
 			this.warned = true;
-			this.deps.buzz();
+			this.deps.signal("warning");
 		}
 		this.set({ kind: "recording", elapsedMs, warning });
 	}
@@ -216,6 +222,9 @@ export class DictationSession {
 	}
 
 	private set(p: Phase): void {
+		// Every way out of recording passes through here, so the screen lock can't outlive it.
+		if (p.kind === "recording") this.deps.awake.hold();
+		else this.deps.awake.release();
 		this._phase = p;
 		for (const fn of this.listeners) fn(p);
 	}

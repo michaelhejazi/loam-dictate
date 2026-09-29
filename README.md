@@ -35,11 +35,21 @@ token that can read it. You set that token in BRAT's own settings.
   toolbar, go to Settings → Toolbar → add the global command
   *Loam Dictate: Dictate*. It is also in the command palette and on the ribbon.
 - The sheet records until you press Stop, or until it reaches the longest
-  recording. Thirty seconds before that point, it turns amber and the phone
-  buzzes once. Then Loam cleans the take and the sheet shows the words. Insert
+  recording. Thirty seconds before that point, it turns amber. Then Loam
+  cleans the take and the sheet shows the words. Insert
   puts them at the cursor as one undo step, with a space first if the cursor
   follows a word. Discard, Cancel, closing the sheet or leaving the note all
   throw the take away.
+- The screen stays on while recording (the Screen Wake Lock API). Where
+  Obsidian's WebView lacks that API, the plugin does nothing about the screen
+  and it sleeps on the phone's usual timeout.
+- You can tell where the take is without looking. The phone gives one short
+  tap when recording starts, two firm pulses thirty seconds before the longest
+  recording, and one long pulse when it stops there by itself. A Stop you press
+  gets no buzz. The patterns are named in `src/signals.ts`, the same three
+  Loam UI's app uses. Where vibration is missing or refused, the two later
+  moments play a soft tone instead. Settings → Loam Dictate says which is in
+  use on this device.
 - If Loam can't be reached, the sheet shows the server's sentence and keeps
   the recording, so you can press Try again when you have signal.
 
@@ -77,6 +87,10 @@ local port. They cover:
 - the spacing rule for inserted words
 - the sheet's state machine through every way out, over a fake microphone that
   checks it was released
+- the screen wake lock, over a fake one: held while recording, let go on every
+  way out, asked for again when the page is shown again mid-take
+- the three haptic moments and none on a manual Stop, over a fake `vibrate`,
+  and the tone played when `vibrate` is missing or returns `false`
 
 None of this needs a device.
 
@@ -121,6 +135,8 @@ None of this needs a device.
 | `src/loam.ts` | `LoamTranscriber`, the one implementation. It calls the route through Obsidian's `requestUrl`, so no browser CORS applies. |
 | `src/session.ts` | The sheet's state machine: starting, recording, cleaning, ready, not cleaned, unsupported, closed. It uses no DOM and no Obsidian, so it can be tested on its own. |
 | `src/recorder.ts` | `MediaRecorder` over `getUserMedia`. It asks for Opus in WebM at 32 kbit/s where the platform offers it, and the recording's real MIME type is what gets sent. |
+| `src/signals.ts` | The three haptic patterns by name (`HAPTICS`), and the soft-tone fallback where vibration isn't felt. |
+| `src/wakelock.ts` | `ScreenWake`: keeps the screen on while the session is recording, asking again whenever the page is shown. |
 | `src/modal.ts` | The sheet, an Obsidian `Modal`. It draws the session's phase following `design/dictate-sheet.html`. |
 | `src/insert.ts`, `src/vocabulary.ts` | The spacing rule and the terms list. |
 
@@ -131,5 +147,5 @@ another action beside Insert. The session's `ready` phase already carries the
 words it would need.
 
 Everything the plugin creates is released when it closes: the microphone, the
-clock, the drawing loop and the listeners. Unloading the plugin closes any open
+screen wake lock, the clock, the drawing loop and the listeners. Unloading the plugin closes any open
 sheet.
