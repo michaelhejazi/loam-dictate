@@ -1,6 +1,6 @@
 // Stands in for Obsidian's requestUrl in tests: same request fields, same
 // { status, text } answer, never throws on an error status.
-import type { HttpClient } from "../src/loam";
+import type { HttpClient } from "../src/http";
 
 export const fetchClient: HttpClient = async (req) => {
 	const res = await fetch(req.url, {

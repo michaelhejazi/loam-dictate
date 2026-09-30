@@ -1,8 +1,8 @@
 // The one seam between the sheet and whoever turns audio into words.
-// The sheet knows only this interface; src/main.ts constructs the one
-// implementation (LoamTranscriber) in makeTranscriber(). A second
-// implementation — a user's own key, later — is a new class there and
-// touches nothing in the sheet.
+// The sheet knows only this interface; makeTranscriber() in src/provider.ts
+// constructs GeminiTranscriber (src/gemini.ts) or LoamTranscriber
+// (src/loam.ts) from the provider setting. Another provider is another class
+// there and touches nothing in the sheet.
 
 export interface Transcript {
 	/** The cleaned words. */

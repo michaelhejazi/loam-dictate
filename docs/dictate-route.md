@@ -18,7 +18,7 @@ x-vocabulary: <encodeURIComponent(JSON.stringify(["term", ...]))>
 ```
 
 - `<server>` is the address in the plugin's settings; trailing slashes are dropped.
-- The vocabulary is the user's names and terms, then the open note's title and
+- The vocabulary is the names and terms in the user's terms note, then the open note's title and
   headings: each once regardless of case, none over 80 characters, at most 100
   terms and at most 6,000 bytes once encoded, cut from the end
   (`src/vocabulary.ts`).

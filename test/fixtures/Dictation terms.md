@@ -1,0 +1,30 @@
+---
+tags: [dictation]
+aliases:
+  - Terms
+---
+%% Names and terms Loam Dictate should spell right: one per line, or several on a line separated by commas. %%
+%% Headings, list markers, blank lines and these comment lines are ignored. The open note's title and headings are added on their own. %%
+
+# People
+
+- Simin
+* Dariush Mehrjui
++ Anaïs
+
+## Places
+
+1. Tochal
+2) Darband, Darakeh, Shemiran
+
+## Work
+- [ ] Loam UI
+- [x] Obsidian
+
+Flyo,  WebM , , Opus
+%%
+a multi-line comment
+that is ignored
+%%
+   Gödel–Escher–Bach   
+#hashtag stays

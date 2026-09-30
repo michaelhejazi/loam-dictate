@@ -1,7 +1,7 @@
 {
   "name": "loam-dictate",
-  "version": "0.1.1",
-  "description": "Obsidian plugin: record a take, clean it through a Loam UI server, insert it at the cursor.",
+  "version": "0.2.0",
+  "description": "Obsidian plugin: record a take, transcribe it with Gemini (your own key) or a Loam server, insert it at the cursor.",
   "private": true,
   "type": "module",
   "scripts": {

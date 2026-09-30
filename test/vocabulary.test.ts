@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { MAX_ENCODED_BYTES, MAX_TERMS, buildTerms, encodeTerms, parseTermsSetting } from "../src/vocabulary";
+import { MAX_ENCODED_BYTES, MAX_TERMS, buildTerms, encodeTerms } from "../src/vocabulary";
 
 describe("the vocabulary sent with a take", () => {
-	it("puts the user's list first, then the note title, then its headings", () => {
+	it("puts the terms note's list first, then the note title, then its headings", () => {
 		expect(buildTerms(["Simin", "Flyo"], "Trail notes", ["Ridge loop", "Next"])).toEqual([
 			"Simin",
 			"Flyo",
@@ -19,7 +19,7 @@ describe("the vocabulary sent with a take", () => {
 	it("drops blank lines, trims, and drops terms over 80 characters", () => {
 		const long = "x".repeat(81);
 		const edge = "y".repeat(80);
-		expect(buildTerms(parseTermsSetting("  Simin \n\n\r\n" + long + "\n" + edge), null, [])).toEqual(["Simin", edge]);
+		expect(buildTerms(["  Simin ", "", "\r", long, edge], null, [])).toEqual(["Simin", edge]);
 	});
 
 	it("caps the list at 100 terms, cut from the end", () => {

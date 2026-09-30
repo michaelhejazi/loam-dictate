@@ -38,7 +38,7 @@ export interface SessionDeps {
 	recorders: RecorderFactory;
 	transcriber: Transcriber;
 	/** Read when a take is sent, so the list reflects the note as it is then. */
-	terms: () => string[];
+	terms: () => string[] | Promise<string[]>;
 	capMs: number;
 	clock: Clock;
 	/** The three moments a walker feels: started, thirty seconds left, stopped at the cap (src/signals.ts). */
@@ -172,9 +172,10 @@ export class DictationSession {
 	private async clean(gen: number): Promise<void> {
 		const take = this.take;
 		if (!take) return;
-		const terms = this.deps.terms();
-		this.termsSent = terms.length;
 		try {
+			const terms = await this.deps.terms();
+			if (gen !== this.generation) return;
+			this.termsSent = terms.length;
 			const result = await this.deps.transcriber.transcribe(take.audio, take.mimeType, terms);
 			if (gen !== this.generation) return;
 			this.set({ kind: "ready", text: result.text, biased: result.biased, durationMs: this.durationMs, targetGone: false });

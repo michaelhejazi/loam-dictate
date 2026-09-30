@@ -66,7 +66,9 @@ function fakeSignals(vibrate: "works" | "missing" | "refuses" = "works") {
 	return { signals, vibrations, tones };
 }
 
-function setup(opts: { mediaRecorder?: boolean; vibrate?: "works" | "missing" | "refuses" } = {}) {
+function setup(
+	opts: { mediaRecorder?: boolean; vibrate?: "works" | "missing" | "refuses"; terms?: () => string[] | Promise<string[]> } = {},
+) {
 	const mic = fakeMic(opts);
 	const time = fakeClock();
 	const tx = fakeTranscriber();
@@ -75,7 +77,7 @@ function setup(opts: { mediaRecorder?: boolean; vibrate?: "works" | "missing" | 
 	const session = new DictationSession({
 		recorders: mediaRecorderFactory(() => mic.env),
 		transcriber: tx.t,
-		terms: () => ["Simin", "Flyo"],
+		terms: opts.terms ?? (() => ["Simin", "Flyo"]),
 		capMs: CAP,
 		clock: time.clock,
 		signal: (m) => sig.signals.signal(m),
@@ -257,6 +259,34 @@ describe("the sheet's session, through every way out", () => {
 		expect(s.session.phase).toEqual({ kind: "unsupported", message: CANNOT_RECORD });
 		expect(s.mic.tracks).toHaveLength(0);
 		s.session.close();
+		expect(s.session.phase.kind).toBe("closed");
+	});
+});
+
+describe("the terms are read when the take is sent", () => {
+	it("waits for a terms note read from the vault, then sends what it held", async () => {
+		let reads = 0;
+		const s = setup({ terms: async () => (reads++, ["From the note"]) });
+		await s.session.record();
+		expect(reads).toBe(0);
+		s.time.advance(5_000);
+		void s.session.stop();
+		await flush();
+		expect(reads).toBe(1);
+		expect(s.tx.calls[0].terms).toEqual(["From the note"]);
+		expect(s.session.termsSent).toBe(1);
+	});
+
+	it("a sheet closed while the note is being read sends nothing", async () => {
+		let release!: (t: string[]) => void;
+		const s = setup({ terms: () => new Promise<string[]>((r) => (release = r)) });
+		await s.session.record();
+		void s.session.stop();
+		await flush();
+		s.session.close();
+		release(["late"]);
+		await flush();
+		expect(s.tx.calls).toHaveLength(0);
 		expect(s.session.phase.kind).toBe("closed");
 	});
 });

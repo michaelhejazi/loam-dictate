@@ -1,30 +1,13 @@
 // The Loam UI implementation of Transcriber: POST <server>/api/dictate.
 // The route's contract is written down in docs/dictate-route.md.
 
+import { HttpClient, HttpRequest, WAIT_MS, parseJson, send } from "./http";
 import { Transcriber, TranscribeError, Transcript } from "./transcriber";
-
-/** The part of Obsidian's requestUrl this uses; tests pass a fetch-backed stand-in. */
-export interface HttpRequest {
-	url: string;
-	method: string;
-	contentType: string;
-	body: ArrayBuffer;
-	headers: Record<string, string>;
-	throw: false;
-}
-export interface HttpResponse {
-	status: number;
-	text: string;
-}
-export type HttpClient = (req: HttpRequest) => Promise<HttpResponse>;
 
 export interface LoamConfig {
 	server: string;
 	token: string;
 }
-
-/** The server may take 120 s on the model; wait a little past that. */
-export const WAIT_MS = 150_000;
 
 /** Shown when the server answered with an error but no sentence of its own. */
 export const FALLBACK: Record<number, string> = {
@@ -70,21 +53,9 @@ export class LoamTranscriber implements Transcriber {
 			throw: false,
 		};
 
-		let timer: ReturnType<typeof setTimeout> | undefined;
-		const timeout = new Promise<never>((_, reject) => {
-			timer = setTimeout(() => reject(new TranscribeError(TOO_SLOW, 0)), this.waitMs);
-		});
-		let res: HttpResponse;
-		try {
-			res = await Promise.race([this.http(request), timeout]);
-		} catch (e) {
-			if (e instanceof TranscribeError) throw e;
-			throw new TranscribeError(UNREACHABLE, 0);
-		} finally {
-			clearTimeout(timer);
-		}
+		const res = await send(this.http, request, this.waitMs, { unreachable: UNREACHABLE, tooSlow: TOO_SLOW });
 
-		const body = parse(res.text);
+		const body = parseJson(res.text);
 		if (res.status === 200) {
 			if (body && typeof body.text === "string") {
 				return { text: body.text, biased: body.biased === true };
@@ -93,14 +64,5 @@ export class LoamTranscriber implements Transcriber {
 		}
 		const sentence = body && typeof body.error === "string" && body.error.trim() ? body.error.trim() : null;
 		throw new TranscribeError(sentence ?? FALLBACK[res.status] ?? `Loam answered with an error (${res.status}).`, res.status);
-	}
-}
-
-function parse(text: string): Record<string, unknown> | null {
-	try {
-		const v: unknown = JSON.parse(text);
-		return v && typeof v === "object" ? (v as Record<string, unknown>) : null;
-	} catch {
-		return null;
 	}
 }
