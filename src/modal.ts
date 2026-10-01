@@ -106,7 +106,7 @@ export class DictateModal extends Modal {
 				this.head(el, "quiet", "Cleaning up…", true);
 				this.clock(el, fmt(p.durationMs), null, false).addClass("is-faint");
 				this.wave(el, true);
-				this.hint(el, `Record and clean · biased with ${this.session.termsSent} ${plural(this.session.termsSent, "term")}`, false);
+				this.hint(el, p.terms === null ? "Record and clean" : `Record and clean · biased with ${p.terms} ${plural(p.terms, "term")}`, false);
 				this.actions(el, [["Cancel", "quiet", () => this.close()]]);
 				this.drawWave(true);
 				break;

@@ -74,21 +74,23 @@ honest choice for a plugin that needs a Gemini key.
 
 `npm run lint` runs the same rules locally
 ([eslint-plugin-obsidianmd](https://github.com/obsidianmd/eslint-plugin)'s
-recommended set). On 0.3.1 it reports no errors and these warnings, which
-don't block a submission and are kept on purpose:
+recommended set). From 0.3.2 it reports no errors and no warnings.
 
-- **`prefer-setting-definitions`, and `display` deprecated (three places).**
-  The declarative settings API needs Obsidian 1.13. The plugin supports
-  1.4.0 and up (`minAppVersion`), and below 1.13 the directory's own rule
-  requires `display()`. Adopting it means raising `minAppVersion` to 1.13;
-  that is a choice for later, not a fix.
-- **`setDynamicTooltip` deprecated.** From 1.13 the slider shows its value on
-  its own; on older Obsidian this call is what shows it.
-- **Sentence case (two strings).** Both name Obsidian's own menus,
-  *Settings → Toolbar* and a self-hosted server's menu path, which keep their
-  capitals. The directory's scanner may also flag the notices that begin
-  "Loam Dictate:", since it doesn't know the plugin's name is a proper noun;
-  the repo's lint config lists it as a brand.
+0.3.2 moved the settings tab to Obsidian 1.13's declarative API
+(`getSettingDefinitions()`), which cleared `prefer-setting-definitions` and
+the deprecated `display` and `setDynamicTooltip`, and raised `minAppVersion`
+to 1.13.0; `versions.json` offers older Obsidian 0.3.1. The two sentence-case
+warnings 0.3.1 had are gone too, but only because the rule reads `setDesc()`
+and `createEl()` text and not a definition's `desc`: the strings still name
+Obsidian's menus (*Settings → Toolbar*, *Loam UI → Settings*) with their
+capitals, on purpose. The directory's scanner may also flag the notices that
+begin "Loam Dictate:", since it doesn't know the plugin's name is a proper
+noun; the repo's lint config lists it as a brand.
+
+The directory's scorecard also checks for GitHub artifact attestations on the
+release assets; `release.yml` attests all three from 0.3.2. The clipboard
+disclosure it lists is correct: Copy on the sheet writes the words to the
+clipboard.
 
 ## The guideline check, rule by rule
 
@@ -101,7 +103,7 @@ don't block a submission and are kept on purpose:
 | No ads, no obfuscation, no self-update | Pass |
 | Account or payment disclosed | Pass: a Google account and Gemini key are needed; the README links Google's pricing page |
 | `fundingUrl` only for donations | Pass: none |
-| `minAppVersion` appropriate | Pass: 1.4.0; the lint rule `no-unsupported-api` finds no newer API in use |
+| `minAppVersion` appropriate | Pass: 1.13.0, which the declarative settings API needs; the lint rule `no-unsupported-api` finds no newer API in use |
 | Description: action first, ≤ 250 characters, ends with a period, no emoji | Pass: 151 characters |
 | Node and Electron APIs only on desktop | Pass: none used; `isDesktopOnly: false` |
 | No plugin id in command ids | Pass: the command is `dictate` |

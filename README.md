@@ -12,7 +12,7 @@ Speak into a note in Obsidian and get clean text at the cursor, on your phone or
 
 [![Latest release](https://img.shields.io/github/v/release/michaelhejazi/loam-dictate?sort=semver)](https://github.com/michaelhejazi/loam-dictate/releases/latest)
 [![CI](https://github.com/michaelhejazi/loam-dictate/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelhejazi/loam-dictate/actions/workflows/ci.yml)
-[![Licence: MIT](https://img.shields.io/github/license/michaelhejazi/loam-dictate)](LICENSE)
+[![Licence: MIT](https://img.shields.io/github/license/michaelhejazi/loam-dictate)](https://github.com/michaelhejazi/loam-dictate/blob/main/LICENSE)
 <!-- Once Obsidian's download stats include the plugin:
 [![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=%23483699&label=downloads&query=%24%5B%22loam-dictate%22%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json)](https://obsidian.md/plugins?id=loam-dictate)
 -->
@@ -31,7 +31,7 @@ Speak into a note in Obsidian and get clean text at the cursor, on your phone or
 
 ## Get started
 
-1. **Install.** In Obsidian, Settings → Community plugins → Browse → search for *Loam Dictate* → Install → Enable.
+1. **Install.** In Obsidian, Settings → Community plugins → Browse → search for *Loam Dictate* → Install → Enable. It needs Obsidian 1.13 or later; older Obsidian is offered 0.3.1.
 2. **Get a Gemini API key.** Settings → Loam Dictate shows these same steps under the key field:
    1. Open [Google AI Studio's API keys page](https://aistudio.google.com/apikey) and sign in with a Google account.
    2. Select Create API key. The first time, Google asks you to accept its terms of service, and AI Studio may then create a Google Cloud project and a key for you.
@@ -92,7 +92,7 @@ The plugin talks to one service, Google's Gemini API, and only when you ask it t
 - `GET https://generativelanguage.googleapis.com/v1beta/models/<model>` when you
   press Check key: your key and the model name, nothing else.
 
-Both are written down in [docs/gemini-request.md](docs/gemini-request.md).
+Both are written down in [docs/gemini-request.md](https://github.com/michaelhejazi/loam-dictate/blob/main/docs/gemini-request.md).
 There is no telemetry, no analytics and no other network call. **Report a
 problem** only opens a link in your browser; nothing is sent until you submit
 the issue yourself.
@@ -110,9 +110,9 @@ Honest about what is not done yet, and where help is welcome:
 
 ## Contributing
 
-Bug reports, fixes and ideas are welcome. Build and test with `npm ci`, `npm run build` and `npm test`; [CONTRIBUTING.md](CONTRIBUTING.md) has the rest, including how the code is laid out.
+Bug reports, fixes and ideas are welcome. Build and test with `npm ci`, `npm run build` and `npm test`; [CONTRIBUTING.md](https://github.com/michaelhejazi/loam-dictate/blob/main/CONTRIBUTING.md) has the rest, including how the code is laid out.
 A good place to start is an issue labelled [good first issue](https://github.com/michaelhejazi/loam-dictate/labels/good%20first%20issue) or [help wanted](https://github.com/michaelhejazi/loam-dictate/labels/help%20wanted).
-Changes by version are in [CHANGELOG.md](CHANGELOG.md); security problems go to [SECURITY.md](SECURITY.md), not a public issue.
+Changes by version are in [CHANGELOG.md](https://github.com/michaelhejazi/loam-dictate/blob/main/CHANGELOG.md); security problems go to [SECURITY.md](https://github.com/michaelhejazi/loam-dictate/blob/main/SECURITY.md), not a public issue.
 
 ## Who made it
 
@@ -121,4 +121,4 @@ under his direction, which is why the commits carry the engineer's name.
 
 ## Licence
 
-MIT, see [LICENSE](LICENSE).
+MIT, see [LICENSE](https://github.com/michaelhejazi/loam-dictate/blob/main/LICENSE).

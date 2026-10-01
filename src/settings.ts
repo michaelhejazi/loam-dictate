@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting, SettingDefinitionItem } from "obsidian";
 import { DEFAULT_MODEL } from "./gemini";
 import type LoamDictatePlugin from "./main";
 import { PROVIDERS, Provider, ProviderSettings, visibleProviders } from "./provider";
@@ -60,6 +60,21 @@ export const PROVIDER_FIELDS: Record<Provider, string[]> = {
 	loam: ["Server address", "Token"],
 };
 
+/** What each saved field becomes when typed into, before it is saved. */
+const NORMALISE: Partial<Record<keyof LoamDictateSettings, (v: unknown) => unknown>> = {
+	geminiKey: (v) => String(v).trim(),
+	geminiModel: (v) => String(v).trim() || DEFAULT_MODEL,
+	server: (v) => String(v).trim(),
+	token: (v) => String(v).trim(),
+	maxMinutes: clampMinutes,
+	termsPath: (v) => String(v).trim() || DEFAULT_TERMS_PATH,
+};
+
+/**
+ * Declarative, so every row is in Obsidian's settings search (1.13+). Plain
+ * fields are `control`s; the rows with a password field, a button or a link
+ * are `render`s, which are searched by their name and description all the same.
+ */
 export class LoamDictateSettingTab extends PluginSettingTab {
 	constructor(
 		app: App,
@@ -68,98 +83,126 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 		super(app, plugin);
 	}
 
-	display(): void {
-		const { containerEl } = this;
-		const s = this.plugin.settings;
-		containerEl.empty();
-
-		// With one provider to offer there is nothing to choose, so no dropdown.
-		const offered = visibleProviders(s);
-		if (offered.length > 1) {
-			new Setting(containerEl)
-				.setName("Transcribe with")
-				.setDesc("Who turns the recording into words.")
-				.addDropdown((d) =>
-					d
-						.addOptions(Object.fromEntries(offered.map((p) => [p, PROVIDERS[p]])))
-						.setValue(s.provider)
-						.onChange(async (v) => {
-							s.provider = v as Provider;
-							await this.plugin.saveSettings();
-							this.display();
-						}),
-				);
-		}
-
-		if (s.provider === "gemini") this.gemini();
-		else this.loam();
-
-		containerEl.createEl("p", {
-			cls: "setting-item-description",
-			text: "To put Dictate on the phone's toolbar: Settings → Toolbar → Add global command → Loam Dictate: Dictate.",
-		});
-
-		new Setting(containerEl)
-			.setName("Longest recording")
-			.setDesc(`Whole minutes, ${MIN_MINUTES}–${MAX_MINUTES}. Recording stops by itself at this length.`)
-			.addSlider((sl) =>
-				sl
-					.setLimits(MIN_MINUTES, MAX_MINUTES, 1)
-					.setValue(s.maxMinutes)
-					.setDynamicTooltip()
-					.onChange(async (v) => {
-						s.maxMinutes = clampMinutes(v);
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		containerEl.createEl("p", { cls: "setting-item-description", text: signalLine(this.plugin.signals.path()) });
-
-		new Setting(containerEl)
-			.setName("Names and terms note")
-			.setDesc(
-				"A note in this vault of names and terms you want spelled right, one per line. It is read on every take, with the open note's title and headings added.",
-			)
-			.addText((t) =>
-				t
-					.setPlaceholder(DEFAULT_TERMS_PATH)
-					.setValue(s.termsPath)
-					.onChange(async (v) => {
-						s.termsPath = v.trim() || DEFAULT_TERMS_PATH;
-						await this.plugin.saveSettings();
-					}),
-			)
-			.addButton((b) => b.setButtonText("Open").onClick(() => void this.plugin.openTermsNote()));
-
-		if (s.terms !== undefined) this.oldTerms(s.terms);
-
-		const report = new Setting(containerEl)
-			.setName("Report a problem")
-			.setDesc(
-				"Opens a new issue on GitHub with the plugin version, Obsidian version, platform and provider filled in. Never your key, a server address or a recording.",
-			);
-		report.controlEl.createEl("a", { text: "Open an issue", href: this.plugin.reportUrl() });
+	getControlValue(key: string): unknown {
+		return this.plugin.settings[key as keyof LoamDictateSettings];
 	}
 
-	private gemini(): void {
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		const k = key as keyof LoamDictateSettings;
+		const normalise = NORMALISE[k];
+		Object.assign(this.plugin.settings, { [k]: normalise ? normalise(value) : value });
+		await this.plugin.saveSettings();
+		// The provider decides which fields are shown.
+		if (k === "provider") this.refreshDomState();
+	}
+
+	getSettingDefinitions(): SettingDefinitionItem[] {
 		const s = this.plugin.settings;
-		let result: HTMLElement | null = null;
-		new Setting(this.containerEl)
-			.setName(PROVIDER_FIELDS.gemini[0])
-			.setDesc(
-				"Recordings go from this device to Google under your key and nowhere else. The key is stored in plain text in this plugin's settings file inside the vault.",
-			)
+		const on = (p: Provider) => () => s.provider === p;
+		// With one provider to offer there is nothing to choose, so no dropdown.
+		const offered = visibleProviders(s);
+		return [
+			{
+				name: "Transcribe with",
+				desc: "Who turns the recording into words.",
+				visible: offered.length > 1,
+				control: { type: "dropdown", key: "provider", options: Object.fromEntries(offered.map((p) => [p, PROVIDERS[p]])) },
+			},
+			{
+				name: PROVIDER_FIELDS.gemini[0],
+				desc: GEMINI_KEY_DESC,
+				aliases: ["Check key", "How to get a Gemini API key", "Google AI Studio"],
+				visible: on("gemini"),
+				render: (setting) => this.geminiKey(setting),
+			},
+			{
+				name: PROVIDER_FIELDS.gemini[1],
+				desc: `The Gemini model that transcribes. ${DEFAULT_MODEL} is Google's speech-to-text model; change this only when Google names a newer one.`,
+				visible: on("gemini"),
+				control: { type: "text", key: "geminiModel", placeholder: DEFAULT_MODEL },
+			},
+			{
+				name: PROVIDER_FIELDS.loam[0],
+				desc: "The address of your Loam UI server. Takes are sent here and nowhere else. Find it and the token in Loam UI → Settings → Dictation → Obsidian.",
+				visible: on("loam"),
+				control: { type: "text", key: "server", placeholder: "https://loam.example.net" },
+			},
+			{
+				name: PROVIDER_FIELDS.loam[1],
+				desc: LOAM_TOKEN_DESC,
+				visible: on("loam"),
+				render: (setting) => {
+					setting.setName(PROVIDER_FIELDS.loam[1]).setDesc(LOAM_TOKEN_DESC);
+					setting.addText((t) => {
+						t.inputEl.type = "password";
+						t.inputEl.autocomplete = "off";
+						t.setValue(s.token).onChange((v) => this.setControlValue("token", v));
+					});
+				},
+			},
+			{
+				name: "Dictate from the phone's toolbar",
+				desc: "Settings → Toolbar → Add global command → Loam Dictate: Dictate.",
+				aliases: ["Mobile toolbar"],
+			},
+			{
+				name: "Longest recording",
+				desc: `Whole minutes, ${MIN_MINUTES}–${MAX_MINUTES}. Recording stops by itself at this length.`,
+				control: { type: "slider", key: "maxMinutes", min: MIN_MINUTES, max: MAX_MINUTES, step: 1 },
+			},
+			{
+				name: "Alerts",
+				desc: signalLine(this.plugin.signals.path()),
+				aliases: ["Vibration", "Haptics", "Tone"],
+			},
+			{
+				name: "Names and terms note",
+				desc: TERMS_NOTE_DESC,
+				aliases: ["Vocabulary", "Spelling"],
+				render: (setting) => {
+					setting
+						.setName("Names and terms note")
+						.setDesc(TERMS_NOTE_DESC)
+						.addText((t) =>
+							t
+								.setPlaceholder(DEFAULT_TERMS_PATH)
+								.setValue(s.termsPath)
+								.onChange((v) => this.setControlValue("termsPath", v)),
+						)
+						.addButton((b) => b.setButtonText("Open").onClick(() => void this.plugin.openTermsNote()));
+				},
+			},
+			{
+				name: OLD_TERMS_NAME,
+				visible: () => s.terms !== undefined,
+				render: (setting) => this.oldTerms(setting),
+			},
+			{
+				name: "Report a problem",
+				desc: REPORT_DESC,
+				aliases: ["Bug", "Issue"],
+				render: (setting) => {
+					setting.setName("Report a problem").setDesc(REPORT_DESC);
+					setting.controlEl.createEl("a", { text: "Open an issue", href: this.plugin.reportUrl() });
+				},
+			},
+		];
+	}
+
+	/** The key as a password field, Check key beside it, its answer and the steps to a key folded under it. */
+	private geminiKey(setting: Setting): void {
+		const s = this.plugin.settings;
+		setting.setName(PROVIDER_FIELDS.gemini[0]).setDesc(GEMINI_KEY_DESC);
+		const result = setting.descEl.createEl("p", { cls: "setting-item-description loam-dictate-keycheck" });
+		this.keyHelp(setting.descEl);
+		setting
 			.addText((t) => {
 				t.inputEl.type = "password";
 				t.inputEl.autocomplete = "off";
-				t.setValue(s.geminiKey).onChange(async (v) => {
-					s.geminiKey = v.trim();
-					await this.plugin.saveSettings();
-				});
+				t.setValue(s.geminiKey).onChange((v) => this.setControlValue("geminiKey", v));
 			})
 			.addButton((b) =>
 				b.setButtonText("Check key").onClick(async () => {
-					if (!result) return;
 					result.setText("Checking…");
 					result.setAttr("data-outcome", "checking");
 					const check = await this.plugin.checkGeminiKey();
@@ -167,27 +210,11 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 					result.setAttr("data-outcome", check.outcome);
 				}),
 			);
-		result = this.containerEl.createEl("p", { cls: "setting-item-description loam-dictate-keycheck" });
-		this.keyHelp();
-		new Setting(this.containerEl)
-			.setName(PROVIDER_FIELDS.gemini[1])
-			.setDesc(
-				`The Gemini model that transcribes. ${DEFAULT_MODEL} is Google's speech-to-text model; change this only when Google names a newer one.`,
-			)
-			.addText((t) =>
-				t
-					.setPlaceholder(DEFAULT_MODEL)
-					.setValue(s.geminiModel)
-					.onChange(async (v) => {
-						s.geminiModel = v.trim() || DEFAULT_MODEL;
-						await this.plugin.saveSettings();
-					}),
-			);
 	}
 
 	/** The steps to a key, folded under the key field. The README repeats KEY_STEPS word for word. */
-	private keyHelp(): void {
-		const details = this.containerEl.createEl("details", { cls: "loam-dictate-keyhelp" });
+	private keyHelp(parent: HTMLElement): void {
+		const details = parent.createEl("details", { cls: "loam-dictate-keyhelp" });
 		details.createEl("summary", { text: "How to get a Gemini API key" });
 		const list = details.createEl("ol");
 		for (const step of KEY_STEPS) {
@@ -204,55 +231,33 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 		}
 	}
 
-	private loam(): void {
-		const s = this.plugin.settings;
-		this.containerEl.createEl("p", {
-			cls: "setting-item-description",
-			text: "Find the server address and token in Loam UI → Settings → Dictation → Obsidian.",
-		});
-		new Setting(this.containerEl)
-			.setName(PROVIDER_FIELDS.loam[0])
-			.setDesc("The address of your Loam UI server. Takes are sent here and nowhere else.")
-			.addText((t) =>
-				t
-					.setPlaceholder("https://loam.example.net")
-					.setValue(s.server)
-					.onChange(async (v) => {
-						s.server = v.trim();
-						await this.plugin.saveSettings();
-					}),
-			);
-		new Setting(this.containerEl)
-			.setName(PROVIDER_FIELDS.loam[1])
-			.setDesc("Stored in plain text in this plugin's settings file inside the vault.")
-			.addText((t) => {
-				t.inputEl.type = "password";
-				t.inputEl.autocomplete = "off";
-				t.setValue(s.token).onChange(async (v) => {
-					s.token = v.trim();
-					await this.plugin.saveSettings();
-				});
-			});
-	}
-
 	/** 0.1.x's list, still in settings because the note already existed. Nothing reads it. */
-	private oldTerms(terms: string): void {
-		const count = terms.split(/\r?\n/).filter((l) => l.trim()).length;
-		new Setting(this.containerEl)
-			.setName("Names and terms from before 0.2")
+	private oldTerms(setting: Setting): void {
+		const count = (this.plugin.settings.terms ?? "").split(/\r?\n/).filter((l) => l.trim()).length;
+		setting
+			.setName(OLD_TERMS_NAME)
 			.setDesc(
 				`${count} ${count === 1 ? "term is" : "terms are"} still in this plugin's settings and not used, because the terms note already existed. Add them to the end of the note, or forget them.`,
 			)
-			.addButton((b) => b.setButtonText("Add to note").onClick(() => void this.plugin.appendOldTerms().then(() => this.display())))
+			.addButton((b) => b.setButtonText("Add to note").onClick(() => void this.plugin.appendOldTerms().then(() => this.refreshDomState())))
 			.addButton((b) =>
 				b.setButtonText("Forget").onClick(async () => {
 					delete this.plugin.settings.terms;
 					await this.plugin.saveSettings();
-					this.display();
+					this.refreshDomState();
 				}),
 			);
 	}
 }
+
+const GEMINI_KEY_DESC =
+	"Recordings go from this device to Google under your key and nowhere else. The key is stored in plain text in this plugin's settings file inside the vault.";
+const LOAM_TOKEN_DESC = "Stored in plain text in this plugin's settings file inside the vault.";
+const TERMS_NOTE_DESC =
+	"A note in this vault of names and terms you want spelled right, one per line. It is read on every take, with the open note's title and headings added.";
+const OLD_TERMS_NAME = "Names and terms from before 0.2";
+const REPORT_DESC =
+	"Opens a new issue on GitHub with the plugin version, Obsidian version, platform and provider filled in. Never your key, a server address or a recording.";
 
 type Part = string | { text: string; href: string };
 
@@ -274,14 +279,14 @@ export const KEY_PRICING: Part[] = [
 	".",
 ];
 
-/** One line on how the three moments reach this device; no setting, just what is in use. */
+/** The Alerts row: how the three moments reach this device; no setting, just what is in use. */
 export function signalLine(path: SignalPath): string {
 	switch (path) {
 		case "vibration":
-			return "Alerts: vibration, a tap when recording starts, two pulses thirty seconds before the longest recording, one long pulse when it stops there.";
+			return "Vibration: a tap when recording starts, two pulses thirty seconds before the longest recording, one long pulse when it stops there.";
 		case "tone: no vibration":
-			return "Alerts: a soft tone thirty seconds before the longest recording and when it stops there, because Obsidian has no vibration on this device.";
+			return "A soft tone thirty seconds before the longest recording and when it stops there, because Obsidian has no vibration on this device.";
 		case "tone: vibration refused":
-			return "Alerts: a soft tone thirty seconds before the longest recording and when it stops there, because this device refused to vibrate for Obsidian.";
+			return "A soft tone thirty seconds before the longest recording and when it stops there, because this device refused to vibrate for Obsidian.";
 	}
 }

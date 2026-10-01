@@ -3,6 +3,9 @@
 # The tag must equal manifest.json's version exactly (no "v").
 # After the release it records the assets and their sizes as a git note on
 # the tag (refs/notes/release), so the release can be checked with git alone.
+# The three assets are attested with GitHub's build provenance first, so
+# anyone can check that a download was built here, from this tag
+# (`gh attestation verify main.js --repo michaelhejazi/loam-dictate`).
 name: Release
 
 on:
@@ -11,6 +14,9 @@ on:
 
 permissions:
   contents: write
+  # Build provenance: a Sigstore certificate for this run, and the attestations API.
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -29,12 +35,20 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - name: Attest the three assets
+        id: attest
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" main.js manifest.json styles.css \
-            --title "$GITHUB_REF_NAME" --notes "Loam Dictate $GITHUB_REF_NAME. Install or update from Obsidian's community plugins (Settings → Community plugins); until the listing is live, through BRAT."
+            --title "$GITHUB_REF_NAME" --notes "Loam Dictate $GITHUB_REF_NAME. Install or update from Obsidian's community plugins (Settings → Community plugins). The three files carry GitHub build provenance: ${{ steps.attest.outputs.attestation-url }}"
       - name: Record the release on the tag
         env:
           GH_TOKEN: ${{ github.token }}
@@ -44,6 +58,7 @@ jobs:
           gh release view "$GITHUB_REF_NAME" --json url,assets \
             --jq '"release " + .url, (.assets[] | "asset " + .name + " " + (.size|tostring) + " bytes")' > note.txt
           sha256sum main.js manifest.json styles.css | sed 's/^/sha256 /' >> note.txt
+          echo "attestation ${{ steps.attest.outputs.attestation-url }}" >> note.txt
           cat note.txt
           git fetch origin "refs/notes/release:refs/notes/release" || true
           git notes --ref=release add -f -F note.txt "$GITHUB_REF_NAME"

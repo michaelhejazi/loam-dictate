@@ -45,7 +45,8 @@ the tests cover:
 - Check key's request and its outcomes: the key works, refused, unknown model,
   Google unreachable
 - which providers the settings tab offers on a fresh install and on one with a
-  self-hosted server saved, over a stand-in for Obsidian's `Setting`
+  self-hosted server saved, over a stand-in for Obsidian 1.13's declarative
+  settings (`getSettingDefinitions()`) that draws only the visible rows
 - the Report a problem link's body, and that it never carries a key, token or
   address
 - opening the terms note without Obsidian's private settings API
@@ -164,9 +165,12 @@ Releases are cut by the maintainer:
    `git tag <x.y.z> && git push origin main <x.y.z>`.
 3. `.github/workflows/release.yml` checks that the tag matches the manifest,
    then tests, builds, and creates the GitHub release with `main.js`,
-   `manifest.json` and `styles.css` attached. It then writes the release URL,
-   the asset sizes and the SHA-256 of each asset as a git note on the tagged
-   commit, which you can read without GitHub access:
+   `manifest.json` and `styles.css` attached, each with a GitHub build
+   provenance attestation (`actions/attest-build-provenance`), so a download
+   can be checked with `gh attestation verify main.js --repo michaelhejazi/loam-dictate`.
+   It then writes the release URL, the asset sizes, the SHA-256 of each asset
+   and the attestation's URL as a git note on the tagged commit, which you can
+   read without GitHub access:
    `git fetch origin refs/notes/release:refs/notes/release && git notes --ref=release show <x.y.z>`.
 
 Submitting to Obsidian's community directory is done by hand on

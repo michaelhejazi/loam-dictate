@@ -15,7 +15,8 @@ export type Phase =
 	| { kind: "unsupported"; message: string }
 	| { kind: "starting" }
 	| { kind: "recording"; elapsedMs: number; warning: boolean }
-	| { kind: "cleaning"; durationMs: number }
+	/** `terms` is how many names and terms go with this take: null until the note has been read. */
+	| { kind: "cleaning"; durationMs: number; terms: number | null }
 	| { kind: "ready"; text: string; biased: boolean; durationMs: number; targetGone: boolean }
 	/** Not cleaned. With the take kept, Try again resends it; without one, it records afresh. */
 	| { kind: "failed"; message: string; durationMs: number; takeKept: boolean }
@@ -58,7 +59,6 @@ export class DictationSession {
 	/** Bumped on every way out of a phase, so late answers from an old one are ignored. */
 	private generation = 0;
 	private listeners: Array<(p: Phase) => void> = [];
-	termsSent = 0;
 
 	constructor(private readonly deps: SessionDeps) {}
 
@@ -122,7 +122,7 @@ export class DictationSession {
 		this.durationMs = this.elapsed();
 		this.stopClock();
 		const gen = ++this.generation;
-		this.set({ kind: "cleaning", durationMs: this.durationMs });
+		this.set({ kind: "cleaning", durationMs: this.durationMs, terms: null });
 		let take: Recording;
 		try {
 			take = await recorder.stop();
@@ -145,7 +145,7 @@ export class DictationSession {
 		if (this._phase.kind !== "failed") return;
 		if (!this.take) return this.record();
 		const gen = ++this.generation;
-		this.set({ kind: "cleaning", durationMs: this.durationMs });
+		this.set({ kind: "cleaning", durationMs: this.durationMs, terms: null });
 		await this.clean(gen);
 	}
 
@@ -175,7 +175,8 @@ export class DictationSession {
 		try {
 			const terms = await this.deps.terms();
 			if (gen !== this.generation) return;
-			this.termsSent = terms.length;
+			// Drawn again now the count is known, so the hint is this take's and not the last one's.
+			this.set({ kind: "cleaning", durationMs: this.durationMs, terms: terms.length });
 			const result = await this.deps.transcriber.transcribe(take.audio, take.mimeType, terms);
 			if (gen !== this.generation) return;
 			this.set({ kind: "ready", text: result.text, biased: result.biased, durationMs: this.durationMs, targetGone: false });

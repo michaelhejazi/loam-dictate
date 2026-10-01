@@ -98,14 +98,14 @@ describe("the sheet's session, through every way out", () => {
 		expect(s.session.phase).toEqual({ kind: "recording", elapsedMs: 22_000, warning: false });
 
 		const stopping = s.session.stop();
-		expect(s.session.phase).toEqual({ kind: "cleaning", durationMs: 22_000 });
+		expect(s.session.phase).toEqual({ kind: "cleaning", durationMs: 22_000, terms: null });
 		await flush();
 		expect(s.mic.released()).toBe(true);
 		expect(s.time.running()).toBe(0);
 		expect(s.tx.calls).toHaveLength(1);
 		expect(s.tx.calls[0].mimeType).toBe("audio/webm;codecs=opus");
 		expect(s.tx.calls[0].terms).toEqual(["Simin", "Flyo"]);
-		expect(s.session.termsSent).toBe(2);
+		expect(s.session.phase).toEqual({ kind: "cleaning", durationMs: 22_000, terms: 2 });
 
 		s.tx.calls[0].resolve({ text: "Walked the ridge.", biased: true });
 		await stopping;
@@ -178,7 +178,7 @@ describe("the sheet's session, through every way out", () => {
 		s.time.advance(TICK_MS);
 		expect(s.session.phase).toMatchObject({ kind: "recording", warning: true });
 		s.time.advance(30_000);
-		expect(s.session.phase).toEqual({ kind: "cleaning", durationMs: CAP });
+		expect(s.session.phase).toEqual({ kind: "cleaning", durationMs: CAP, terms: null });
 		await flush();
 		expect(s.mic.released()).toBe(true);
 		expect(s.tx.calls).toHaveLength(1);
@@ -274,7 +274,29 @@ describe("the terms are read when the take is sent", () => {
 		await flush();
 		expect(reads).toBe(1);
 		expect(s.tx.calls[0].terms).toEqual(["From the note"]);
-		expect(s.session.termsSent).toBe(1);
+		expect(s.session.phase).toMatchObject({ kind: "cleaning", terms: 1 });
+	});
+
+	it("the first take's cleaning sheet is drawn with that take's count, and so is every take after (issue #1)", async () => {
+		let note = ["Simin", "Flyo", "Ridge"];
+		const s = setup({ terms: async () => note });
+		const counts: Array<number | null> = [];
+		s.session.onChange((p) => p.kind === "cleaning" && counts.push(p.terms));
+		await s.session.record();
+		s.time.advance(5_000);
+		void s.session.stop();
+		await flush();
+		expect(counts).toEqual([null, 3]);
+		s.tx.calls[0].resolve({ text: "One.", biased: true });
+		await flush();
+
+		note = ["Simin"];
+		counts.length = 0;
+		await s.session.retake();
+		s.time.advance(5_000);
+		void s.session.stop();
+		await flush();
+		expect(counts).toEqual([null, 1]);
 	});
 
 	it("a sheet closed while the note is being read sends nothing", async () => {

@@ -7,17 +7,34 @@ GitHub release with `main.js`, `manifest.json` and `styles.css` attached.
 
 ## [Unreleased]
 
-No change to the plugin; nothing here needs a release.
+## [0.3.2] - 2026-10-01
+
+Needs Obsidian 1.13.0 or later. Obsidian older than that is offered 0.3.1.
 
 ### Changed
 
+- The settings are declared through Obsidian 1.13's settings API
+  (`getSettingDefinitions()`), so every one of them appears in Obsidian's
+  settings search. They look and work as before; the toolbar hint and the
+  Alerts line are rows with their own names now, and the Loam server's menu
+  path is part of the Server address description.
+- The release's three files carry GitHub build provenance attestations.
+- The README's links to the licence, the contributing guide, the changelog,
+  the security policy and the docs are absolute, so they work on the
+  community directory's listing too.
 - Release notes say to install or update from Obsidian's community plugins,
-  with BRAT until the listing is live.
+  and link the release's attestation.
 - The README says who made the plugin and how.
 - `package.json`'s `homepage` is the author's GitHub profile, like
   `manifest.json`'s `authorUrl`.
 - The README is shorter and leads with three screenshots of the sheet; the
   build, test, layout and release notes moved to CONTRIBUTING.md.
+
+### Fixed
+
+- The cleaning sheet showed the previous take's number of terms (0 on the
+  first take). It now shows the number sent with this take
+  ([#1](https://github.com/michaelhejazi/loam-dictate/issues/1)).
 
 ## [0.3.1] - 2026-10-01
 
@@ -104,7 +121,8 @@ the repository's public history.
 - Retake, Discard and Try again; a failed take is kept with a sentence saying
   why.
 
-[Unreleased]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.1...HEAD
+[Unreleased]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.2...HEAD
+[0.3.2]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/michaelhejazi/loam-dictate/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/michaelhejazi/loam-dictate/compare/0.1.1...0.2.0

@@ -172,12 +172,12 @@
 	margin-top: 4px;
 }
 
-/* Settings: the Check key result and the steps to a key. */
+/* Settings: the Check key result and the steps to a key, both inside the key row's description. */
 .loam-dictate-keycheck:empty {
 	display: none;
 }
 .loam-dictate-keycheck {
-	margin-top: 0;
+	margin: var(--size-4-1) 0 0;
 }
 .loam-dictate-keycheck[data-outcome="works"] {
 	color: var(--text-success);
@@ -190,7 +190,7 @@
 	color: var(--text-error);
 }
 .loam-dictate-keyhelp {
-	margin: 0 0 var(--size-4-3);
+	margin: var(--size-4-2) 0 0;
 	font-size: var(--font-ui-small);
 	color: var(--text-muted);
 }
