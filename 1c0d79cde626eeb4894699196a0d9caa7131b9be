@@ -1,0 +1,8 @@
+release https://github.com/michaelhejazi/loam-dictate/releases/tag/0.3.2
+asset main.js 33112 bytes
+asset manifest.json 375 bytes
+asset styles.css 4500 bytes
+sha256 05f1f17a64fa2662d71eff0aefdc6d7722b4bb8d4b9ad0020c564558cfd847a6  main.js
+sha256 fa7e19e9a56610bcde48d662b5bf7dbb8c3830d87a922cb2a6076fd752b90796  manifest.json
+sha256 f26eefe29c1bfc3f138e15831af6e9c37d26b952bcebd160e2914e349b7c5045  styles.css
+attestation https://github.com/michaelhejazi/loam-dictate/attestations/51974190
