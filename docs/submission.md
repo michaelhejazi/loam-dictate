@@ -96,7 +96,7 @@ don't block a submission and are kept on purpose:
 |---|---|
 | LICENSE file, license clearly indicated | Pass: MIT, `LICENSE`, `package.json` `license: MIT` |
 | README describes purpose and use | Pass |
-| Network use disclosed in the README, which services and why | Pass: README → Network use |
+| Network use disclosed in the README, which services and why | Pass: README → Where your recordings and key go → Network use |
 | No client-side telemetry | Pass: none; the only requests are the take and Check key, both to Google, both on the user's action |
 | No ads, no obfuscation, no self-update | Pass |
 | Account or payment disclosed | Pass: a Google account and Gemini key are needed; the README links Google's pricing page |
@@ -141,10 +141,9 @@ the new commits. What is left is yours:
 2. Settings → Security → **Private vulnerability reporting** → Enable, so the
    **Report a vulnerability** button that `SECURITY.md` points to exists. It
    is only offered on public repositories.
-3. The two screenshots: save them as `docs/images/recording.png` and
-   `docs/images/ready.png` and uncomment the block near the top of the README.
-   The directory's listing shows the README, so it is worth doing before
-   submitting.
+3. The screenshots: done. `docs/images/recording.png`, `cleaning.png` and
+   `ready.png` sit at the top of the README, by absolute URL, since the
+   directory's listing renders the README away from the repository.
 4. Submit on the form (*Steps* above).
 5. Once listed, **Edit listing** → payment type **Optional payment** (see
    *The entry*), and the categories.

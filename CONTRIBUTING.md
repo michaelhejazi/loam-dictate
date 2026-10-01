@@ -25,6 +25,38 @@ microphone, wake lock and vibration are fakes too.
 explained in [docs/submission.md](docs/submission.md); a new warning needs a
 reason there too.
 
+**Bundler: esbuild.** Obsidian's sample plugin uses esbuild, so
+`esbuild.config.mjs` follows the sample's setup: a single CommonJS file, with
+`obsidian`, Electron and CodeMirror left for the app to provide. Using the same
+setup as the sample means Obsidian's documentation applies to this plugin as
+written.
+
+### What the tests cover
+
+The fake Gemini (`test/fake-gemini.mjs`) serves the interactions endpoint and
+model records; its key is `fake-gemini-key-not-a-secret`. The fake Loam route
+(`test/fake-loam.mjs`) serves the self-hosted route in
+[docs/dictate-route.md](docs/dictate-route.md). Over those and other fakes,
+the tests cover:
+
+- the request each provider builds: for Gemini, the JSON body with and without
+  terms, the base64 audio and the MIME mapping for WebM and MP4
+- the sentence shown for each error, and Gemini's vocabulary fallback
+- Check key's request and its outcomes: the key works, refused, unknown model,
+  Google unreachable
+- which providers the settings tab offers on a fresh install and on one with a
+  self-hosted server saved, over a stand-in for Obsidian's `Setting`
+- the Report a problem link's body, and that it never carries a key, token or
+  address
+- opening the terms note without Obsidian's private settings API
+- the terms note parsed from `test/fixtures/Dictation terms.md`, the vocabulary
+  list and its caps, and the move from 0.1's settings
+- the spacing rule for inserted words
+- the sheet's state machine through every way out, over a fake microphone that
+  checks it was released
+- the screen wake lock and the three haptic moments
+- that the README gives the key steps word for word as the settings do
+
 ## Try it in a vault
 
 Use a test vault, not the one you keep your notes in.
@@ -45,7 +77,8 @@ With Obsidian closed, put
 `{"server": "http://127.0.0.1:8787", "token": "fake-token-not-a-secret"}` in
 `<vault>/.obsidian/plugins/loam-dictate/data.json`. The settings then offer
 **A Loam server** under **Transcribe with**, and the fake answers each take
-with a sentence describing the audio it received.
+with a sentence describing the audio it received. `PORT` and `HOST`
+change where it listens.
 
 ## Where things are written
 
@@ -63,8 +96,41 @@ from there. Change them there and nowhere else:
 
 `src/session.ts`, the sheet's state machine, imports neither the DOM nor
 `obsidian`, which is what lets every way out of a take be tested in Node.
-Please keep it that way. The README's *How it is put together* table says
-what each file does.
+Please keep it that way.
+
+## How it is put together
+
+| File | What it does |
+|---|---|
+| `src/main.ts` | The plugin: the Dictate command and ribbon icon, settings, reading the terms note through the vault, Check key and the Report a problem link. |
+| `src/transcriber.ts` | `Transcriber.transcribe(audio, mimeType, terms) → {text, biased}`, the only thing the sheet knows about transcribing. |
+| `src/provider.ts` | The provider setting, which providers the settings offer, and `makeTranscriber()`, the one place a transcriber is constructed. |
+| `src/gemini.ts` | `GeminiTranscriber`: the take to Gemini's Interactions API under the user's key. |
+| `src/keycheck.ts` | Check key: one GET for the model's record, and what the answer means. |
+| `src/loam.ts` | `LoamTranscriber`: a second provider, the take to a self-hosted server's dictation route ([docs/dictate-route.md](docs/dictate-route.md)). The settings offer it only where a server address or token is already saved. |
+| `src/http.ts` | What the requests share: Obsidian's `requestUrl` (so no browser CORS applies) and the wait. |
+| `src/feedback.ts` | The Report a problem link and its four facts. |
+| `src/settings.ts` | The settings, their upgrade from 0.1, the settings tab and the key steps. |
+| `src/termsnote.ts` | The terms note: parsing it, creating it, moving 0.1's list into it. |
+| `src/session.ts` | The sheet's state machine: starting, recording, cleaning, ready, not cleaned, unsupported, closed. It uses no DOM and no Obsidian, so it can be tested on its own. |
+| `src/recorder.ts` | `MediaRecorder` over `getUserMedia`. It asks for Opus in WebM at 32 kbit/s where the platform offers it, and the recording's real MIME type is what gets sent. |
+| `src/signals.ts` | The three haptic patterns by name (`HAPTICS`), and the soft-tone fallback where vibration isn't felt. |
+| `src/wakelock.ts` | `ScreenWake`: keeps the screen on while the session is recording, asking again whenever the page is shown. |
+| `src/modal.ts` | The sheet, an Obsidian `Modal`. It draws the session's phase following `design/dictate-sheet.html`. |
+| `src/insert.ts`, `src/vocabulary.ts` | The spacing rule and the terms list. |
+
+Another way to transcribe, such as a hosted service, is another `Transcriber`
+chosen in `makeTranscriber()` and offered in `visibleProviders()`. The sheet
+does not change.
+
+Everything the plugin creates is released when it closes: the microphone, the
+screen wake lock, the clock, the drawing loop and the listeners. Unloading the
+plugin closes any open sheet.
+
+`design/dictate-sheet.html` is the design the sheet was built from: each of
+its states in one page, open it in a browser. `docs/` holds the contracts of
+the two requests, the notes for submitting to the community directory, and
+the README's screenshots (`docs/images/`).
 
 ## A good pull request
 
@@ -88,5 +154,21 @@ that implements it.
 
 ## Releases
 
-Releases are cut by the maintainer: the README's *Release* section has the
-steps.
+Releases are cut by the maintainer:
+
+1. `npm version <x.y.z> --no-git-tag-version` updates `package.json`, the
+   `manifest.json` version and `versions.json`. `versions.json` maps each
+   version to the minimum Obsidian version it needs. Add the version to
+   [CHANGELOG.md](CHANGELOG.md) and commit.
+2. Tag with the manifest version exactly (no `v`) and push the tag:
+   `git tag <x.y.z> && git push origin main <x.y.z>`.
+3. `.github/workflows/release.yml` checks that the tag matches the manifest,
+   then tests, builds, and creates the GitHub release with `main.js`,
+   `manifest.json` and `styles.css` attached. It then writes the release URL,
+   the asset sizes and the SHA-256 of each asset as a git note on the tagged
+   commit, which you can read without GitHub access:
+   `git fetch origin refs/notes/release:refs/notes/release && git notes --ref=release show <x.y.z>`.
+
+Submitting to Obsidian's community directory is done by hand on
+community.obsidian.md; [docs/submission.md](docs/submission.md) has the entry
+and the steps.

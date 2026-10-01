@@ -16,6 +16,8 @@ No change to the plugin; nothing here needs a release.
 - The README says who made the plugin and how.
 - `package.json`'s `homepage` is the author's GitHub profile, like
   `manifest.json`'s `authorUrl`.
+- The README is shorter and leads with three screenshots of the sheet; the
+  build, test, layout and release notes moved to CONTRIBUTING.md.
 
 ## [0.3.1] - 2026-10-01
 
