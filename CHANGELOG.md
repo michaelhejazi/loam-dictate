@@ -7,6 +7,10 @@ GitHub release with `main.js`, `manifest.json` and `styles.css` attached.
 
 ## [Unreleased]
 
+### Changed
+
+- README screenshots retaken with the terms note connected, cropped to the sheet.
+
 ## [0.3.2] - 2026-10-01
 
 Needs Obsidian 1.13.0 or later. Obsidian older than that is offered 0.3.1.
