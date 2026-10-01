@@ -132,9 +132,10 @@ don't block a submission and are kept on purpose:
 
 The repository holds the plugin's files only: a root commit, the real commits
 from the first design to 0.3.0 with their dates and messages, and then 0.3.1
-onwards. It was created fresh on 2026-10-01 and that history pushed into it,
-so nothing older is on GitHub under any hash. Every version tag has its
-release, cut by the release workflow. What is left is yours:
+onwards. The repository was created fresh on 2026-10-01, and that history was
+pushed into it the same day at 17:01 UTC, so nothing older is on GitHub under
+any hash. Every version tag has its release, cut by the release workflow from
+the new commits. What is left is yours:
 
 1. Settings → General → Danger zone → **Change visibility** → Public.
 2. Settings → Security → **Private vulnerability reporting** → Enable, so the
