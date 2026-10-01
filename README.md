@@ -1,5 +1,24 @@
 # Loam Dictate
 
+Dictate into your Obsidian notes, on phone or desktop, with Gemini under your own API key.
+
+[![Latest release](https://img.shields.io/github/v/release/michaelhejazi/loam-dictate?sort=semver)](https://github.com/michaelhejazi/loam-dictate/releases/latest)
+[![CI](https://github.com/michaelhejazi/loam-dictate/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelhejazi/loam-dictate/actions/workflows/ci.yml)
+[![Licence: MIT](https://img.shields.io/github/license/michaelhejazi/loam-dictate)](LICENSE)
+<!-- Once the plugin is listed in Obsidian's community directory:
+[![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=%23483699&label=downloads&query=%24%5B%22loam-dictate%22%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json)](https://obsidian.md/plugins?id=loam-dictate)
+-->
+
+<!-- SCREENSHOTS: two phone screenshots go here, side by side, once they exist.
+Save them as docs/images/recording.png (the recording sheet) and
+docs/images/ready.png (the Ready card), then replace this comment with:
+
+<p>
+  <img src="docs/images/recording.png" alt="The recording sheet" width="280">
+  <img src="docs/images/ready.png" alt="The Ready card, with Insert, Retake and Discard" width="280">
+</p>
+-->
+
 Loam Dictate lets you dictate into your notes in Obsidian, on a phone or a
 desktop. You speak, Google's Gemini turns the recording into clean text under
 your own API key, and you insert the words at the cursor.
@@ -9,14 +28,11 @@ open source under the MIT licence ([LICENSE](LICENSE)).
 
 ## Install
 
-- **From Obsidian's community directory**, once it is listed there: Settings →
-  Community plugins → Browse → search for *Loam Dictate* → Install → Enable.
-- **Until then, with [BRAT](https://github.com/TfTHacker/obsidian42-brat)**:
-  install and enable BRAT, then use its **Add beta plugin** with
-  `michaelhejazi/loam-dictate`. BRAT installs `main.js`, `manifest.json` and
-  `styles.css` from the latest GitHub release and keeps them up to date. While
-  the repository is private, BRAT also needs a GitHub token that can read it,
-  set in BRAT's own settings.
+In Obsidian, go to Settings → Community plugins → Browse → search for
+*Loam Dictate* → Install → Enable.
+
+Until the plugin is listed there, [BRAT](https://github.com/TfTHacker/obsidian42-brat)'s
+**Add beta plugin** with `michaelhejazi/loam-dictate` installs it from the latest release.
 
 ## Get a Gemini API key
 
@@ -198,17 +214,18 @@ that describes the audio it received instead of a transcript. `PORT` and
 
 ## Release
 
-1. `npm version 0.3.0 --no-git-tag-version` updates `package.json`, the
+1. `npm version <x.y.z> --no-git-tag-version` updates `package.json`, the
    `manifest.json` version and `versions.json`. `versions.json` maps each
-   version to the minimum Obsidian version it needs. Commit.
+   version to the minimum Obsidian version it needs. Add the version to
+   [CHANGELOG.md](CHANGELOG.md) and commit.
 2. Tag with the manifest version exactly (no `v`) and push the tag:
-   `git tag 0.3.0 && git push origin main 0.3.0`.
+   `git tag <x.y.z> && git push origin main <x.y.z>`.
 3. `.github/workflows/release.yml` checks that the tag matches the manifest,
    then tests, builds, and creates the GitHub release with `main.js`,
    `manifest.json` and `styles.css` attached. It then writes the release URL,
    the asset sizes and the SHA-256 of each asset as a git note on the tagged
    commit, which you can read without GitHub access:
-   `git fetch origin refs/notes/release:refs/notes/release && git notes --ref=release show 0.3.0`.
+   `git fetch origin refs/notes/release:refs/notes/release && git notes --ref=release show <x.y.z>`.
 
 Submitting to Obsidian's community directory is a few minutes by hand on
 community.obsidian.md; [docs/submission.md](docs/submission.md) has the entry
@@ -242,3 +259,18 @@ does not change.
 Everything the plugin creates is released when it closes: the microphone, the
 screen wake lock, the clock, the drawing loop and the listeners. Unloading the
 plugin closes any open sheet.
+
+`design/dictate-sheet.html` is the design the sheet was built from: each of
+its states in one page, open it in a browser. `docs/` holds the contracts of
+the two requests and the notes for submitting to the community directory.
+
+## Contributing
+
+Issues and pull requests are welcome; [CONTRIBUTING.md](CONTRIBUTING.md) says
+how to build, test and try a change, and what a good pull request looks like.
+Changes by version are in [CHANGELOG.md](CHANGELOG.md). To report a security
+problem, see [SECURITY.md](SECURITY.md) rather than opening a public issue.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).

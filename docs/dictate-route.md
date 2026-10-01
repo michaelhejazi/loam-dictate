@@ -4,7 +4,7 @@ The plugin calls one route on a Loam UI server. This is its contract as the
 plugin relies on it; `test/fake-loam.mjs` implements it and the tests run
 against that fake. The real route is built and owned by Loam UI.
 
-*Written 2026-09-28 from the brief for the first version of the plugin.*
+*Written 2026-09-28 for the first version of the plugin.*
 
 ## Request
 

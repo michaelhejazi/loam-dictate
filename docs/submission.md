@@ -36,13 +36,8 @@ honest choice for a plugin that needs a Gemini key.
 
 ## Before you submit
 
-1. **The repository must be readable by the directory.** Either make
-   `michaelhejazi/loam-dictate` public, or keep it private and publish the
-   releases from a separate public repository, then install the
-   [Obsidian Community directory GitHub App](https://github.com/apps/obsidian-community-directory)
-   on the private one so the directory can verify the build against the
-   source. Making it public is the simpler of the two, and BRAT users then
-   need no token.
+1. **The repository must be readable by the directory**, so make
+   `michaelhejazi/loam-dictate` public first (see *Going public* below).
 2. The release named by `manifest.json`'s `version` exists, with `main.js`,
    `manifest.json` and `styles.css` attached (the release workflow does this on
    a tag).
@@ -74,7 +69,7 @@ honest choice for a plugin that needs a Gemini key.
 
 `npm run lint` runs the same rules locally
 ([eslint-plugin-obsidianmd](https://github.com/obsidianmd/eslint-plugin)'s
-recommended set). On 0.3.0 it reports no errors and these warnings, which
+recommended set). On 0.3.1 it reports no errors and these warnings, which
 don't block a submission and are kept on purpose:
 
 - **`prefer-setting-definitions`, and `display` deprecated (three places).**
@@ -127,3 +122,59 @@ don't block a submission and are kept on purpose:
 | No inline styles | Pass: classes in `styles.css`, Obsidian's variables |
 | No regex lookbehind (iOS) | Pass |
 | `const`/`let`, async/await | Pass |
+
+## Going public
+
+The history was rewritten for 0.3.1 so that it holds the plugin's files only:
+a root commit, the real commits from the first design to 0.3.0 with their
+dates and messages, and 0.3.1. Every version tag was recreated on the new
+commits and its release cut again from them. Before you flip the repository
+to public:
+
+1. **The old commits may still be reachable on GitHub by their hashes.**
+   A force-push removes them from every branch and tag, but GitHub keeps
+   unreferenced commits it has already seen, and serves them to anyone who
+   knows a hash, until its own garbage collection runs. The old hashes are
+   in nothing public, but the old Actions runs list them. The two sure ways to
+   leave nothing behind are to delete this repository and push the clean
+   history to a new one under the same name, or to ask GitHub Support to
+   remove cached views and run garbage collection on it after the
+   force-push. The new repository is the faster of the two; it also clears
+   the old Actions runs.
+2. Settings → General → Danger zone → **Change visibility** → Public.
+3. Settings → Security → **Private vulnerability reporting** → Enable, so the
+   **Report a vulnerability** button that `SECURITY.md` points to exists. It
+   is only offered on public repositories.
+4. The repository's About box (the gear beside *About* on the code page):
+
+   | Field | Text |
+   |---|---|
+   | Description | `Obsidian plugin: dictate into your notes on phone or desktop, transcribed by Gemini with your own API key.` |
+   | Website | leave empty until the directory lists it, then `https://obsidian.md/plugins?id=loam-dictate` |
+   | Topics | `obsidian`, `obsidian-plugin`, `dictation`, `speech-to-text`, `transcription`, `gemini`, `voice-notes` |
+
+   Untick *Packages* and *Deployments* in the same box; the repository has
+   neither.
+5. The two screenshots: save them as `docs/images/recording.png` and
+   `docs/images/ready.png` and uncomment the block near the top of the README.
+   The directory's listing shows the README, so it is worth doing before
+   submitting.
+
+## From BRAT to the directory, on your own phone
+
+Your copy was installed by BRAT into `.obsidian/plugins/loam-dictate`. The
+directory lists the plugin under the same id, `loam-dictate`, and Obsidian's
+own updater checks every installed plugin whose id is in the directory: once
+it is listed, Settings → Community plugins → **Check for updates** offers new
+versions of that same folder. Nothing is reinstalled, and your settings,
+including the key in `data.json`, stay where they are.
+
+- **Do not uninstall Loam Dictate** to switch. Uninstalling deletes the
+  folder, and the key and settings with it.
+- **Remove it from BRAT's list** (Settings → BRAT → the beta plugin list →
+  remove `michaelhejazi/loam-dictate`). It isn't required, because both read
+  the same releases from the same repository, but with both watching, the
+  plugin is updated by whichever looks first, and BRAT can install a release
+  before the directory has reviewed it.
+- Once the repository is public, the GitHub token in BRAT's settings is no
+  longer needed for this plugin.
