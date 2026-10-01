@@ -271,6 +271,11 @@ how to build, test and try a change, and what a good pull request looks like.
 Changes by version are in [CHANGELOG.md](CHANGELOG.md). To report a security
 problem, see [SECURITY.md](SECURITY.md) rather than opening a public issue.
 
+## Who made it
+
+Loam Dictate was designed by Michael Hejazi and built with an AI engineer
+under his direction, which is why the commits carry the engineer's name.
+
 ## Licence
 
 MIT, see [LICENSE](LICENSE).

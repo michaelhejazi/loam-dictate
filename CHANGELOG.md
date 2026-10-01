@@ -7,6 +7,16 @@ GitHub release with `main.js`, `manifest.json` and `styles.css` attached.
 
 ## [Unreleased]
 
+No change to the plugin; nothing here needs a release.
+
+### Changed
+
+- Release notes say to install or update from Obsidian's community plugins,
+  with BRAT until the listing is live.
+- The README says who made the plugin and how.
+- `package.json`'s `homepage` is the author's GitHub profile, like
+  `manifest.json`'s `authorUrl`.
+
 ## [0.3.1] - 2026-10-01
 
 No change to the plugin's behaviour; this release is the first one cut from

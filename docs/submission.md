@@ -29,6 +29,11 @@ The form asks for two things; the directory reads the rest from
 | authorUrl (manifest) | `https://github.com/michaelhejazi` |
 | description (manifest) | `Dictate into your notes on phone or desktop: record a spoken take, have Gemini transcribe it with your own API key, and insert the words at the cursor.` |
 
+`authorUrl` (in `manifest.json`) and `homepage` (in `package.json`) point to
+the author's GitHub profile for now. When his own site is ready, both change to
+it in a commit on `main`, with no release: the directory reads `manifest.json`
+from the head of `main`, and neither field is in the plugin's code.
+
 After it is listed, **Edit listing** sets the categories and the payment type.
 The FAQ says a plugin that relies on a third-party service that may charge is
 **Optional payment**, even when that service has a free tier, so that is the
@@ -125,27 +130,25 @@ don't block a submission and are kept on purpose:
 
 ## Going public
 
-The history was rewritten for 0.3.1 so that it holds the plugin's files only:
-a root commit, the real commits from the first design to 0.3.0 with their
-dates and messages, and 0.3.1. Every version tag was recreated on the new
-commits and its release cut again from them. Before you flip the repository
-to public:
+The repository holds the plugin's files only: a root commit, the real commits
+from the first design to 0.3.0 with their dates and messages, and then 0.3.1
+onwards. It was created fresh on 2026-10-01 and that history pushed into it,
+so nothing older is on GitHub under any hash. Every version tag has its
+release, cut by the release workflow. What is left is yours:
 
-1. **The old commits may still be reachable on GitHub by their hashes.**
-   A force-push removes them from every branch and tag, but GitHub keeps
-   unreferenced commits it has already seen, and serves them to anyone who
-   knows a hash, until its own garbage collection runs. The old hashes are
-   in nothing public, but the old Actions runs list them. The two sure ways to
-   leave nothing behind are to delete this repository and push the clean
-   history to a new one under the same name, or to ask GitHub Support to
-   remove cached views and run garbage collection on it after the
-   force-push. The new repository is the faster of the two; it also clears
-   the old Actions runs.
-2. Settings → General → Danger zone → **Change visibility** → Public.
-3. Settings → Security → **Private vulnerability reporting** → Enable, so the
+1. Settings → General → Danger zone → **Change visibility** → Public.
+2. Settings → Security → **Private vulnerability reporting** → Enable, so the
    **Report a vulnerability** button that `SECURITY.md` points to exists. It
    is only offered on public repositories.
-4. The repository's About box (the gear beside *About* on the code page):
+3. The two screenshots: save them as `docs/images/recording.png` and
+   `docs/images/ready.png` and uncomment the block near the top of the README.
+   The directory's listing shows the README, so it is worth doing before
+   submitting.
+4. Submit on the form (*Steps* above).
+5. Once listed, **Edit listing** → payment type **Optional payment** (see
+   *The entry*), and the categories.
+6. The repository's About box (the gear beside *About* on the code page), any
+   time:
 
    | Field | Text |
    |---|---|
@@ -155,10 +158,6 @@ to public:
 
    Untick *Packages* and *Deployments* in the same box; the repository has
    neither.
-5. The two screenshots: save them as `docs/images/recording.png` and
-   `docs/images/ready.png` and uncomment the block near the top of the README.
-   The directory's listing shows the README, so it is worth doing before
-   submitting.
 
 ## From BRAT to the directory, on your own phone
 

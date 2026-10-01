@@ -1,4 +1,5 @@
-# Cuts the GitHub release BRAT installs from, when a version tag is pushed.
+# Cuts the GitHub release that Obsidian's community plugins (and, until the
+# listing is live, BRAT) install from, when a version tag is pushed.
 # The tag must equal manifest.json's version exactly (no "v").
 # After the release it records the assets and their sizes as a git note on
 # the tag (refs/notes/release), so the release can be checked with git alone.
@@ -33,7 +34,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" main.js manifest.json styles.css \
-            --title "$GITHUB_REF_NAME" --notes "Loam Dictate $GITHUB_REF_NAME. Install or update through BRAT."
+            --title "$GITHUB_REF_NAME" --notes "Loam Dictate $GITHUB_REF_NAME. Install or update from Obsidian's community plugins (Settings → Community plugins); until the listing is live, through BRAT."
       - name: Record the release on the tag
         env:
           GH_TOKEN: ${{ github.token }}
