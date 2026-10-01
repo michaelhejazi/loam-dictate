@@ -1,6 +1,6 @@
 {
   "name": "loam-dictate",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Obsidian plugin: record a spoken take, have Gemini transcribe it with your own API key, insert the words at the cursor.",
   "keywords": [
     "obsidian",

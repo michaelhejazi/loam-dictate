@@ -101,11 +101,16 @@
     border-radius: 18px 18px 0 0; padding: 10px 18px 22px; box-shadow: var(--shadow); }
   .grab { width: 36px; height: 4px; border-radius: 2px; background: var(--background-modifier-border); margin: 0 auto 14px; }
   .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .state { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13.5px; }
+  .state { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13.5px; flex: none; }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-red); box-shadow: 0 0 0 4px rgba(251,70,76,.18); }
   .dot.amber { background: var(--color-orange); box-shadow: 0 0 0 4px rgba(233,151,63,.18); }
   .dot.quiet { background: var(--text-faint); box-shadow: none; }
-  .into { font-size: 12px; color: var(--text-muted); }
+  .into { font-size: 12px; color: var(--text-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    margin-right: 48px; /* room for Obsidian's close button: a long note name ends in … before it */ }
+  /* Obsidian's own close button, drawn only to show what the header makes room for. */
+  .close-x { position: absolute; top: 8px; right: 14px; width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 1;
+    color: var(--text-muted); background: var(--background-modifier-hover); }
   .into b { color: var(--text-normal); font-weight: 500; }
 
   .clock { text-align: center; margin: 18px 0 6px; font-variant-numeric: tabular-nums; }
@@ -188,7 +193,7 @@ const toolbar = `<div class="toolbar">
   ${[10,9,7,3].map(n=>`<div class="k">${'<span></span>'.repeat(n)}</div>`).join('')}
 </div>`;
 
-const sheet = (inner) => `<div class="scrim"></div><div class="sheet"><div class="grab"></div>${inner}</div>`;
+const sheet = (inner) => `<div class="scrim"></div><div class="sheet"><div class="grab"></div><div class="close-x">&times;</div>${inner}</div>`;
 
 const head = (dot, label, into='Trail notes') => `
   <div class="head"><div class="state"><span class="dot ${dot}"></span>${label}</div>

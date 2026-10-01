@@ -7,6 +7,14 @@ GitHub release with `main.js`, `manifest.json` and `styles.css` attached.
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-10-01
+
+### Fixed
+
+- The sheet's header no longer runs under Obsidian's close button (×). The
+  note name ("into *note*") stops short of the button, and a long name ends
+  in an ellipsis before it. The design file draws the button and the room.
+
 ### Changed
 
 - README screenshots retaken with the terms note connected, cropped to the sheet.
@@ -125,7 +133,8 @@ the repository's public history.
 - Retake, Discard and Try again; a failed take is kept with a sentence saying
   why.
 
-[Unreleased]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.2...HEAD
+[Unreleased]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.3...HEAD
+[0.3.3]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/michaelhejazi/loam-dictate/compare/0.2.0...0.3.0

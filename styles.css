@@ -14,6 +14,7 @@
 }
 .loam-dictate-state {
 	display: flex;
+	flex: none;
 	align-items: center;
 	gap: 8px;
 	font-weight: var(--font-semibold);
@@ -25,6 +26,13 @@
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	min-width: 0;
+}
+/* Obsidian draws the modal's close button (×) over the sheet's top-right corner,
+   level with this row: on a phone a raised 44 px circle reaching about 40 px in
+   from the content's edge. The note name stops 48 px short of that edge and a
+   long one ends in an ellipsis there, rather than running under the button. */
+.modal.loam-dictate-modal .loam-dictate-into.loam-dictate-beside-close {
+	margin-inline-end: var(--size-4-12, 48px);
 }
 .loam-dictate-into b {
 	color: var(--text-normal);

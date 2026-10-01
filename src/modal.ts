@@ -156,7 +156,8 @@ export class DictateModal extends Modal {
 		if (spinning) state.createSpan({ cls: "loam-dictate-spin" });
 		else state.createSpan({ cls: ["loam-dictate-dot", ...(dot ? [`is-${dot}`] : [])] });
 		state.createSpan({ text: label });
-		const into = head.createDiv({ cls: "loam-dictate-into", text: "into " });
+		// Room for Obsidian's close button, which sits over this end of the row (styles.css).
+		const into = head.createDiv({ cls: ["loam-dictate-into", "loam-dictate-beside-close"], text: "into " });
 		into.createEl("b", { text: this.target.file.basename });
 	}
 

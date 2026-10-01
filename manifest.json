@@ -1,7 +1,7 @@
 {
 	"id": "loam-dictate",
 	"name": "Loam Dictate",
-	"version": "0.3.2",
+	"version": "0.3.3",
 	"minAppVersion": "1.13.0",
 	"description": "Dictate into your notes on phone or desktop: record a spoken take, have Gemini transcribe it with your own API key, and insert the words at the cursor.",
 	"author": "Michael Hejazi",
