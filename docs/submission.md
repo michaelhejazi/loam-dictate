@@ -22,7 +22,10 @@ rest from `manifest.json` at the head of `main`.
 1. **Rename the repository** to `spoken`, if it is still
    `michaelhejazi/loam-dictate`: on GitHub, the repository's **Settings** →
    **General** → **Repository name** → `spoken` → **Rename**. Then set the
-   About description (step 7).
+   About description (step 7). On 2026-10-01, after the 0.4.0 release, the
+   rename was tried through the API with the repository's automation token
+   and refused (403, "Resource not accessible by integration"), so it is
+   yours to do.
 2. **Archive the old entry.** On [community.obsidian.md](https://community.obsidian.md),
    signed in, go to **Plugins**, open the `loam-dictate` entry, and archive it
    from its **...** menu.
