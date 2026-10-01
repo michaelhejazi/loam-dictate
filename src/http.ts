@@ -7,8 +7,9 @@ import { TranscribeError } from "./transcriber";
 export interface HttpRequest {
 	url: string;
 	method: string;
-	contentType: string;
-	body: ArrayBuffer | string;
+	/** Left out for a GET. */
+	contentType?: string;
+	body?: ArrayBuffer | string;
 	headers: Record<string, string>;
 	throw: false;
 }
@@ -32,9 +33,9 @@ export async function send(
 	waitMs: number,
 	sentences: { unreachable: string; tooSlow: string },
 ): Promise<HttpResponse> {
-	let timer: ReturnType<typeof setTimeout> | undefined;
+	let timer: number | undefined;
 	const timeout = new Promise<never>((_, reject) => {
-		timer = setTimeout(() => reject(new TranscribeError(sentences.tooSlow, 0)), waitMs);
+		timer = window.setTimeout(() => reject(new TranscribeError(sentences.tooSlow, 0)), waitMs);
 	});
 	try {
 		return await Promise.race([http(request), timeout]);
@@ -42,7 +43,7 @@ export async function send(
 		if (e instanceof TranscribeError) throw e;
 		throw new TranscribeError(sentences.unreachable, 0);
 	} finally {
-		clearTimeout(timer);
+		window.clearTimeout(timer);
 	}
 }
 

@@ -171,3 +171,30 @@
 	color: var(--text-muted);
 	margin-top: 4px;
 }
+
+/* Settings: the Check key result and the steps to a key. */
+.loam-dictate-keycheck:empty {
+	display: none;
+}
+.loam-dictate-keycheck {
+	margin-top: 0;
+}
+.loam-dictate-keycheck[data-outcome="works"] {
+	color: var(--text-success);
+}
+.loam-dictate-keycheck[data-outcome="refused"],
+.loam-dictate-keycheck[data-outcome="unknown model"],
+.loam-dictate-keycheck[data-outcome="unreachable"],
+.loam-dictate-keycheck[data-outcome="no key"],
+.loam-dictate-keycheck[data-outcome="other"] {
+	color: var(--text-error);
+}
+.loam-dictate-keyhelp {
+	margin: 0 0 var(--size-4-3);
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+.loam-dictate-keyhelp summary {
+	cursor: pointer;
+	color: var(--text-normal);
+}

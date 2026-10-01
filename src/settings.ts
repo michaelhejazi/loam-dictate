@@ -1,7 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { DEFAULT_MODEL } from "./gemini";
 import type LoamDictatePlugin from "./main";
-import { PROVIDERS, Provider, ProviderSettings } from "./provider";
+import { PROVIDERS, Provider, ProviderSettings, visibleProviders } from "./provider";
 import type { SignalPath } from "./signals";
 import { DEFAULT_TERMS_PATH } from "./termsnote";
 
@@ -73,19 +73,23 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 		const s = this.plugin.settings;
 		containerEl.empty();
 
-		new Setting(containerEl)
-			.setName("Transcribe with")
-			.setDesc("Who turns the recording into words.")
-			.addDropdown((d) =>
-				d
-					.addOptions(PROVIDERS)
-					.setValue(s.provider)
-					.onChange(async (v) => {
-						s.provider = v as Provider;
-						await this.plugin.saveSettings();
-						this.display();
-					}),
-			);
+		// With one provider to offer there is nothing to choose, so no dropdown.
+		const offered = visibleProviders(s);
+		if (offered.length > 1) {
+			new Setting(containerEl)
+				.setName("Transcribe with")
+				.setDesc("Who turns the recording into words.")
+				.addDropdown((d) =>
+					d
+						.addOptions(Object.fromEntries(offered.map((p) => [p, PROVIDERS[p]])))
+						.setValue(s.provider)
+						.onChange(async (v) => {
+							s.provider = v as Provider;
+							await this.plugin.saveSettings();
+							this.display();
+						}),
+				);
+		}
 
 		if (s.provider === "gemini") this.gemini();
 		else this.loam();
@@ -128,17 +132,23 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 			.addButton((b) => b.setButtonText("Open").onClick(() => void this.plugin.openTermsNote()));
 
 		if (s.terms !== undefined) this.oldTerms(s.terms);
+
+		const report = new Setting(containerEl)
+			.setName("Report a problem")
+			.setDesc(
+				"Opens a new issue on GitHub with the plugin version, Obsidian version, platform and provider filled in. Never your key, a server address or a recording.",
+			);
+		report.controlEl.createEl("a", { text: "Open an issue", href: this.plugin.reportUrl() });
 	}
 
 	private gemini(): void {
 		const s = this.plugin.settings;
-		this.containerEl.createEl("p", {
-			cls: "setting-item-description",
-			text: "Get a key at aistudio.google.com → Get API key. Recordings go from this device to Google under your key and nowhere else.",
-		});
+		let result: HTMLElement | null = null;
 		new Setting(this.containerEl)
 			.setName(PROVIDER_FIELDS.gemini[0])
-			.setDesc("Stored in plain text in this plugin's settings file inside the vault.")
+			.setDesc(
+				"Recordings go from this device to Google under your key and nowhere else. The key is stored in plain text in this plugin's settings file inside the vault.",
+			)
 			.addText((t) => {
 				t.inputEl.type = "password";
 				t.inputEl.autocomplete = "off";
@@ -146,7 +156,19 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 					s.geminiKey = v.trim();
 					await this.plugin.saveSettings();
 				});
-			});
+			})
+			.addButton((b) =>
+				b.setButtonText("Check key").onClick(async () => {
+					if (!result) return;
+					result.setText("Checking…");
+					result.setAttr("data-outcome", "checking");
+					const check = await this.plugin.checkGeminiKey();
+					result.setText(check.sentence);
+					result.setAttr("data-outcome", check.outcome);
+				}),
+			);
+		result = this.containerEl.createEl("p", { cls: "setting-item-description loam-dictate-keycheck" });
+		this.keyHelp();
 		new Setting(this.containerEl)
 			.setName(PROVIDER_FIELDS.gemini[1])
 			.setDesc(
@@ -161,6 +183,25 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
+	}
+
+	/** The steps to a key, folded under the key field. The README repeats KEY_STEPS word for word. */
+	private keyHelp(): void {
+		const details = this.containerEl.createEl("details", { cls: "loam-dictate-keyhelp" });
+		details.createEl("summary", { text: "How to get a Gemini API key" });
+		const list = details.createEl("ol");
+		for (const step of KEY_STEPS) {
+			const li = list.createEl("li");
+			for (const part of step) {
+				if (typeof part === "string") li.appendText(part);
+				else li.createEl("a", { text: part.text, href: part.href });
+			}
+		}
+		const pricing = details.createEl("p");
+		for (const part of KEY_PRICING) {
+			if (typeof part === "string") pricing.appendText(part);
+			else pricing.createEl("a", { text: part.text, href: part.href });
+		}
 	}
 
 	private loam(): void {
@@ -212,6 +253,26 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 			);
 	}
 }
+
+type Part = string | { text: string; href: string };
+
+export const AI_STUDIO_KEYS_URL = "https://aistudio.google.com/apikey";
+export const GEMINI_PRICING_URL = "https://ai.google.dev/gemini-api/docs/pricing";
+
+/** Google AI Studio's steps as Google's API key page described them on 2026-10-01. */
+export const KEY_STEPS: Part[][] = [
+	["Open ", { text: "Google AI Studio's API keys page", href: AI_STUDIO_KEYS_URL }, " and sign in with a Google account."],
+	[
+		"Select Create API key. The first time, Google asks you to accept its terms of service, and AI Studio may then create a Google Cloud project and a key for you.",
+	],
+	["Copy the key, paste it into Gemini API key in Loam Dictate's settings, and press Check key."],
+	["Treat the key like a password: anyone who has it can use your quota."],
+];
+export const KEY_PRICING: Part[] = [
+	"Whether you pay, and how much, is on ",
+	{ text: "Google's Gemini API pricing page", href: GEMINI_PRICING_URL },
+	".",
+];
 
 /** One line on how the three moments reach this device; no setting, just what is in use. */
 export function signalLine(path: SignalPath): string {

@@ -1,7 +1,9 @@
-import { Editor, MarkdownFileInfo, Notice, Plugin, TFile, normalizePath, requestUrl } from "obsidian";
+import { Editor, MarkdownFileInfo, Notice, Platform, Plugin, TFile, apiVersion, normalizePath, requestUrl } from "obsidian";
+import { issueUrl, platformName } from "./feedback";
 import { HttpClient } from "./http";
+import { KeyCheck, checkGeminiKey } from "./keycheck";
 import { DictateModal } from "./modal";
-import { makeTranscriber } from "./provider";
+import { PROVIDERS, makeTranscriber } from "./provider";
 import { mediaRecorderFactory } from "./recorder";
 import { realClock } from "./session";
 import { Signals, browserSignalEnv } from "./signals";
@@ -59,7 +61,7 @@ export default class LoamDictatePlugin extends Plugin {
 			return;
 		}
 		const terms = () => this.termsFor(file);
-		const http: HttpClient = (req) => requestUrl(req);
+		const http = this.http;
 		const termCount = (await terms()).length;
 		const modal = new DictateModal(
 			this.app,
@@ -78,6 +80,24 @@ export default class LoamDictatePlugin extends Plugin {
 		);
 		this.open.add(modal);
 		modal.open();
+	}
+
+	/** Obsidian's requestUrl, so no browser CORS applies on phone or desktop. */
+	private readonly http: HttpClient = (req) => requestUrl(req);
+
+	/** Settings → Check key: one request for the configured model's record, under the key. */
+	checkGeminiKey(): Promise<KeyCheck> {
+		return checkGeminiKey(this.settings.geminiKey, this.settings.geminiModel, this.http);
+	}
+
+	/** Settings → Report a problem: a new issue with the four facts filled in, and nothing else. */
+	reportUrl(): string {
+		return issueUrl({
+			pluginVersion: this.manifest.version,
+			obsidianVersion: apiVersion,
+			platform: platformName(Platform),
+			provider: PROVIDERS[this.settings.provider],
+		});
 	}
 
 	/** Read fresh from the note on every take: the note's terms, then this note's title and headings. */
@@ -110,15 +130,18 @@ export default class LoamDictatePlugin extends Plugin {
 		}
 	}
 
-	/** Opens the terms note in a new tab, creating it first if it isn't there. */
+	/**
+	 * Opens the terms note in a new tab, creating it first if it isn't there.
+	 * Obsidian's public API has no way to close the settings window, so it stays
+	 * open over the note and a notice says where the note is.
+	 */
 	async openTermsNote(): Promise<void> {
 		const path = this.termsPath();
 		await ensureTermsNote(this.notes, path);
 		const file = this.app.vault.getAbstractFileByPath(path);
 		if (!(file instanceof TFile)) return;
-		// Close settings so the note is in view; not in Obsidian's public API, so only if it is there.
-		(this.app as unknown as { setting?: { close?: () => void } }).setting?.close?.();
 		await this.app.workspace.getLeaf("tab").openFile(file);
+		new Notice(`Loam Dictate: ${path} is open in a new tab. Close settings to see it.`);
 	}
 
 	/** Adds 0.1.x's list to the end of the terms note and drops it from settings. */

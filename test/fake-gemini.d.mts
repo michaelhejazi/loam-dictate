@@ -1,5 +1,7 @@
 export declare const FAKE_GEMINI_KEY: string;
 export declare const PATH: string;
+export declare const MODELS_PATH: string;
+export declare const KNOWN_MODELS: string[];
 export declare const MIME_TYPES: string[];
 export interface FakeGeminiRequest {
 	method: string;

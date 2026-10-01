@@ -5,7 +5,7 @@ import type { HttpClient } from "../src/http";
 export const fetchClient: HttpClient = async (req) => {
 	const res = await fetch(req.url, {
 		method: req.method,
-		headers: { ...req.headers, "Content-Type": req.contentType },
+		headers: { ...req.headers, ...(req.contentType ? { "Content-Type": req.contentType } : {}) },
 		body: req.body,
 	});
 	return { status: res.status, text: await res.text() };

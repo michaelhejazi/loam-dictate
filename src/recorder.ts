@@ -168,7 +168,7 @@ function stopTracks(stream: MediaStream): void {
 
 /** A sentence for a getUserMedia failure. */
 export function microphoneError(e: unknown): string {
-	const name = e instanceof Error || (e && typeof e === "object" && "name" in e) ? String((e as { name: unknown }).name) : "";
+	const name = e instanceof Error || (e && typeof e === "object" && "name" in e) ? String(e.name) : "";
 	if (name === "NotAllowedError" || name === "SecurityError") return "Obsidian isn't allowed to use the microphone. Allow it in the phone's settings for Obsidian, then try again.";
 	if (name === "NotFoundError" || name === "OverconstrainedError") return "No microphone was found.";
 	if (name === "NotReadableError") return "The microphone is in use by another app.";

@@ -2,7 +2,9 @@
 // the plugin uses it (docs/gemini-request.md): it checks the key the way
 // Google does (400 INVALID_ARGUMENT "API key not valid"), checks the body's
 // shape, and answers with a completed interaction whose model_output text
-// describes the audio it was sent. The tests start it in-process.
+// describes the audio it was sent. It also serves GET /v1beta/models/{model},
+// the model record Check key reads: the record for a model it knows, 404
+// NOT_FOUND for any other. The tests start it in-process.
 //
 // The key is a fixture and obviously fake: FAKE_GEMINI_KEY below.
 
@@ -10,6 +12,8 @@ import { createServer } from "node:http";
 
 export const FAKE_GEMINI_KEY = "fake-gemini-key-not-a-secret";
 export const PATH = "/v1beta/interactions";
+export const MODELS_PATH = "/v1beta/models";
+export const KNOWN_MODELS = ["gemini-3.5-transcribe"];
 export const MIME_TYPES = [
 	"audio/wav", "audio/mp3", "audio/aiff", "audio/aac", "audio/ogg", "audio/flac", "audio/mpeg",
 	"audio/m4a", "audio/l16", "audio/opus", "audio/alaw", "audio/mulaw", "audio/webm",
@@ -64,9 +68,19 @@ export async function startFakeGemini(opts = {}) {
 					res.end(typeof payload === "string" ? payload : JSON.stringify(payload));
 				}, delayMs);
 
-			if (req.method !== "POST" || req.url !== PATH) return send(404, googleError(404, "NOT_FOUND", "Not found."));
+			const modelGet = req.method === "GET" && (req.url ?? "").startsWith(MODELS_PATH + "/");
+			if (!modelGet && (req.method !== "POST" || req.url !== PATH)) return send(404, googleError(404, "NOT_FOUND", "Not found."));
 			if (req.headers["x-goog-api-key"] !== key) {
 				return send(400, googleError(400, "INVALID_ARGUMENT", "API key not valid. Please pass a valid API key."));
+			}
+			if (modelGet) {
+				const name = decodeURIComponent((req.url ?? "").slice(MODELS_PATH.length + 1));
+				const next = scripted.shift();
+				if (next) return send(next.status, next.body, next.delayMs);
+				if (!KNOWN_MODELS.includes(name)) {
+					return send(404, googleError(404, "NOT_FOUND", `models/${name} is not found for API version v1beta.`));
+				}
+				return send(200, { name: `models/${name}`, baseModelId: name, version: "001", displayName: "Fake model" });
 			}
 			const next = scripted.shift();
 			if (next) return send(next.status, next.body, next.delayMs);

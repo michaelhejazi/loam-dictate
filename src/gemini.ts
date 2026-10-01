@@ -108,11 +108,12 @@ export class GeminiTranscriber implements Transcriber {
 
 /** The text of every model_output step, in order. */
 function outputText(body: Record<string, unknown>): string {
-	const steps = Array.isArray(body.steps) ? body.steps : [];
+	type Part = { type?: unknown; text?: unknown; content?: unknown } | null;
+	const steps: Part[] = Array.isArray(body.steps) ? (body.steps as Part[]) : [];
 	let text = "";
 	for (const step of steps) {
 		if (!step || step.type !== "model_output" || !Array.isArray(step.content)) continue;
-		for (const part of step.content) {
+		for (const part of step.content as Part[]) {
 			if (part && part.type === "text" && typeof part.text === "string") text += part.text;
 		}
 	}

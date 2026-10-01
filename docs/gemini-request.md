@@ -67,3 +67,31 @@ of `type: "model_output"`, joined in order and trimmed. A `status` other than
 **The vocabulary fallback.** If Gemini answers 400 with a message mentioning
 vocabulary, the plugin sends the same take once more without
 `custom_vocabulary` and reports `biased: false`. It does not retry again.
+
+## Check key
+
+Settings → Check key sends one request, which proves the key and the model
+name together without spending tokens: it reads the model's own record
+([models.get](https://ai.google.dev/api/models), read 2026-10-01).
+`src/keycheck.ts` implements it; the fake serves it too.
+
+```
+GET https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-transcribe
+x-goog-api-key: <the user's key>
+```
+
+The model is the Model setting (`gemini-3.5-transcribe` when blank, a leading
+`models/` dropped), URL-encoded. The key goes in the header, never in the
+URL's `?key=`, so it stays out of any URL log. The check waits 15 s.
+
+| Answer | Outcome shown |
+|---|---|
+| 200 | the key works and the model exists |
+| 401, 403, or any error whose message mentions the API key (Google's 400 `API key not valid`) | the key is refused |
+| 404 | the key works but there is no such model |
+| no answer, or none within 15 s | Google couldn't be reached |
+| anything else (429, 5xx…) | Google's own message |
+
+Google checks the key before the model, so a wrong key with a wrong model
+reads as a refused key. Since 2026-05-28 AI Studio makes "auth keys", sent the
+same way in `x-goog-api-key`.
