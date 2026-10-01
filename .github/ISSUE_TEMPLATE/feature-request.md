@@ -1,6 +1,6 @@
 ---
 name: Suggest an improvement
-about: Something Loam Dictate could do, or do better.
+about: Something Spoken could do, or do better.
 ---
 
 **What you were trying to do**

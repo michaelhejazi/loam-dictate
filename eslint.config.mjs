@@ -15,7 +15,7 @@ export default defineConfig([
 		},
 		rules: {
 			// The plugin's and the services' own names keep their capitals.
-			"obsidianmd/ui/sentence-case": ["warn", { brands: ["Loam Dictate", "Loam UI", "Loam", "Gemini", "Google AI Studio", "Google", "GitHub", "Obsidian"] }],
+			"obsidianmd/ui/sentence-case": ["warn", { brands: ["Spoken", "Gemini", "Google AI Studio", "Google", "GitHub", "Obsidian"] }],
 		},
 	},
 ]);

@@ -1,7 +1,7 @@
 // The Gemini implementation of Transcriber: the take goes straight from the
 // device to Google's Interactions API under the user's own key.
-// POST https://generativelanguage.googleapis.com/v1beta/interactions, as the
-// Loam server sends it; docs/gemini-request.md says what is sent and why.
+// POST https://generativelanguage.googleapis.com/v1beta/interactions;
+// docs/gemini-request.md says what is sent and why.
 
 import { HttpClient, HttpRequest, WAIT_MS, parseJson, send } from "./http";
 import { Transcriber, TranscribeError, Transcript } from "./transcriber";
@@ -14,8 +14,8 @@ export interface GeminiConfig {
 	model: string;
 }
 
-export const NO_KEY = "Paste your Gemini API key in Loam Dictate's settings.";
-export const BAD_KEY = "Google didn't accept the API key. Check it in Loam Dictate's settings.";
+export const NO_KEY = "Paste your Gemini API key in Spoken's settings.";
+export const BAD_KEY = "Google didn't accept the API key. Check it in Spoken's settings.";
 export const RATE_LIMITED = "Gemini is limiting requests on this key. Wait a moment and try again.";
 export const NOT_FINISHED = "Gemini didn't finish transcribing the recording. Try again.";
 export const MODEL_FAILED = "Gemini failed to transcribe the recording. Try again.";
@@ -26,7 +26,7 @@ export const NO_WORDS = "No words were heard in the recording.";
 export const TOO_LARGE = "The recording is too large to send to Gemini in one request.";
 export const UNREADABLE = "Gemini answered with something that isn't a transcript.";
 export const unknownModel = (model: string) =>
-	`Gemini has no model called "${model}". Check the model name in Loam Dictate's settings.`;
+	`Gemini has no model called "${model}". Check the model name in Spoken's settings.`;
 
 /**
  * The MIME type Gemini is told. Parameters are dropped (Chrome's

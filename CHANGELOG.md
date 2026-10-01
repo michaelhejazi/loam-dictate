@@ -1,11 +1,35 @@
 # Changelog
 
-All notable changes to Loam Dictate are written here. The format follows
+All notable changes to Spoken are written here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Each version is a
 GitHub release with `main.js`, `manifest.json` and `styles.css` attached.
 
 ## [Unreleased]
+
+## [0.4.0] - 2026-10-01
+
+The plugin was renamed from Loam Dictate to **Spoken**. It is a product of its
+own, not a part of Loam, and speech is meant to become the way you drive
+Obsidian: dictation first, editing and commands later.
+
+### Changed
+
+- The plugin's id changed from `loam-dictate` to `spoken`, and its name from
+  Loam Dictate to Spoken. Obsidian treats a new id as a new plugin, so an
+  existing install is not updated: remove Loam Dictate, then install Spoken
+  fresh. Its settings, including the Gemini key, are not carried over; paste
+  the key again, and set the terms note's path again if it wasn't
+  `Dictation terms.md`; the note itself stays in the vault. There is no
+  migration code, deliberately.
+- The repository is `michaelhejazi/spoken`. Its CSS classes are `spoken-*`.
+
+### Removed
+
+- The provider that sent takes to a Loam UI server's `POST /api/dictate`.
+  That route was retired, so the provider could no longer work. Gemini under
+  your own key is the one provider; the `Transcriber` seam stays, so another
+  can be added later without touching the sheet.
 
 ## [0.3.3] - 2026-10-01
 
@@ -46,7 +70,7 @@ Needs Obsidian 1.13.0 or later. Obsidian older than that is offered 0.3.1.
 
 - The cleaning sheet showed the previous take's number of terms (0 on the
   first take). It now shows the number sent with this take
-  ([#1](https://github.com/michaelhejazi/loam-dictate/issues/1)).
+  ([#1](https://github.com/michaelhejazi/spoken/issues/1)).
 
 ## [0.3.1] - 2026-10-01
 
@@ -133,11 +157,12 @@ the repository's public history.
 - Retake, Discard and Try again; a failed take is kept with a sentence saying
   why.
 
-[Unreleased]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.3...HEAD
-[0.3.3]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.2...0.3.3
-[0.3.2]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.1...0.3.2
-[0.3.1]: https://github.com/michaelhejazi/loam-dictate/compare/0.3.0...0.3.1
-[0.3.0]: https://github.com/michaelhejazi/loam-dictate/compare/0.2.0...0.3.0
-[0.2.0]: https://github.com/michaelhejazi/loam-dictate/compare/0.1.1...0.2.0
-[0.1.1]: https://github.com/michaelhejazi/loam-dictate/compare/0.1.0...0.1.1
-[0.1.0]: https://github.com/michaelhejazi/loam-dictate/releases/tag/0.1.0
+[Unreleased]: https://github.com/michaelhejazi/spoken/compare/0.4.0...HEAD
+[0.4.0]: https://github.com/michaelhejazi/spoken/compare/0.3.3...0.4.0
+[0.3.3]: https://github.com/michaelhejazi/spoken/compare/0.3.2...0.3.3
+[0.3.2]: https://github.com/michaelhejazi/spoken/compare/0.3.1...0.3.2
+[0.3.1]: https://github.com/michaelhejazi/spoken/compare/0.3.0...0.3.1
+[0.3.0]: https://github.com/michaelhejazi/spoken/compare/0.2.0...0.3.0
+[0.2.0]: https://github.com/michaelhejazi/spoken/compare/0.1.1...0.2.0
+[0.1.1]: https://github.com/michaelhejazi/spoken/compare/0.1.0...0.1.1
+[0.1.0]: https://github.com/michaelhejazi/spoken/releases/tag/0.1.0

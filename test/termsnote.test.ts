@@ -37,7 +37,7 @@ describe("the terms note", () => {
 			"Darband",
 			"Darakeh",
 			"Shemiran",
-			"Loam UI",
+			"Readwise",
 			"Obsidian",
 			"Flyo",
 			"WebM",

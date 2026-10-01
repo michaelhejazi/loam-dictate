@@ -3,7 +3,7 @@ tags: [dictation]
 aliases:
   - Terms
 ---
-%% Names and terms Loam Dictate should spell right: one per line, or several on a line separated by commas. %%
+%% Names and terms Spoken should spell right: one per line, or several on a line separated by commas. %%
 %% Headings, list markers, blank lines and these comment lines are ignored. The open note's title and headings are added on their own. %%
 
 # People
@@ -18,7 +18,7 @@ aliases:
 2) Darband, Darakeh, Shemiran
 
 ## Work
-- [ ] Loam UI
+- [ ] Readwise
 - [x] Obsidian
 
 Flyo,  WebM , , Opus

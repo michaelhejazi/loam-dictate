@@ -1,11 +1,11 @@
 import { App, PluginSettingTab, Setting, SettingDefinitionItem } from "obsidian";
 import { DEFAULT_MODEL } from "./gemini";
-import type LoamDictatePlugin from "./main";
+import type SpokenPlugin from "./main";
 import { PROVIDERS, Provider, ProviderSettings, visibleProviders } from "./provider";
 import type { SignalPath } from "./signals";
 import { DEFAULT_TERMS_PATH } from "./termsnote";
 
-export interface LoamDictateSettings extends ProviderSettings {
+export interface SpokenSettings extends ProviderSettings {
 	/** Longest recording, whole minutes 1–15. */
 	maxMinutes: number;
 	/** The vault path of the names-and-terms note. */
@@ -17,12 +17,10 @@ export interface LoamDictateSettings extends ProviderSettings {
 	terms?: string;
 }
 
-export const DEFAULT_SETTINGS: LoamDictateSettings = {
+export const DEFAULT_SETTINGS: SpokenSettings = {
 	provider: "gemini",
 	geminiKey: "",
 	geminiModel: DEFAULT_MODEL,
-	server: "",
-	token: "",
 	maxMinutes: 5,
 	termsPath: DEFAULT_TERMS_PATH,
 };
@@ -37,18 +35,16 @@ export function clampMinutes(n: unknown): number {
 }
 
 /**
- * Settings as saved, brought up to date. 0.1.x saved no provider: an install
- * with a Loam address or token stays on Loam, anything else is new and gets
- * Gemini. `changed` says whether the result should be saved back.
+ * Settings as saved, brought up to date. A saved provider this version doesn't
+ * have becomes Gemini. `changed` says whether the result should be saved back.
  */
-export function upgradeSettings(data: unknown): { settings: LoamDictateSettings; changed: boolean } {
-	const saved = (data && typeof data === "object" ? data : {}) as Partial<LoamDictateSettings>;
-	const settings: LoamDictateSettings = { ...DEFAULT_SETTINGS, ...saved };
+export function upgradeSettings(data: unknown): { settings: SpokenSettings; changed: boolean } {
+	const saved = (data && typeof data === "object" ? data : {}) as Partial<SpokenSettings>;
+	const settings: SpokenSettings = { ...DEFAULT_SETTINGS, ...saved };
 	let changed = false;
-	if (saved.provider !== "gemini" && saved.provider !== "loam") {
-		const wasLoam = Boolean(saved.server?.trim() || saved.token?.trim());
-		settings.provider = wasLoam ? "loam" : "gemini";
-		changed = wasLoam;
+	if (saved.provider !== undefined && !(visibleProviders() as string[]).includes(saved.provider)) {
+		settings.provider = "gemini";
+		changed = true;
 	}
 	settings.maxMinutes = clampMinutes(settings.maxMinutes);
 	return { settings, changed };
@@ -57,15 +53,12 @@ export function upgradeSettings(data: unknown): { settings: LoamDictateSettings;
 /** The settings each provider shows, by name; the tab draws exactly these. */
 export const PROVIDER_FIELDS: Record<Provider, string[]> = {
 	gemini: ["Gemini API key", "Model"],
-	loam: ["Server address", "Token"],
 };
 
 /** What each saved field becomes when typed into, before it is saved. */
-const NORMALISE: Partial<Record<keyof LoamDictateSettings, (v: unknown) => unknown>> = {
+const NORMALISE: Partial<Record<keyof SpokenSettings, (v: unknown) => unknown>> = {
 	geminiKey: (v) => String(v).trim(),
 	geminiModel: (v) => String(v).trim() || DEFAULT_MODEL,
-	server: (v) => String(v).trim(),
-	token: (v) => String(v).trim(),
 	maxMinutes: clampMinutes,
 	termsPath: (v) => String(v).trim() || DEFAULT_TERMS_PATH,
 };
@@ -75,20 +68,20 @@ const NORMALISE: Partial<Record<keyof LoamDictateSettings, (v: unknown) => unkno
  * fields are `control`s; the rows with a password field, a button or a link
  * are `render`s, which are searched by their name and description all the same.
  */
-export class LoamDictateSettingTab extends PluginSettingTab {
+export class SpokenSettingTab extends PluginSettingTab {
 	constructor(
 		app: App,
-		private readonly plugin: LoamDictatePlugin,
+		private readonly plugin: SpokenPlugin,
 	) {
 		super(app, plugin);
 	}
 
 	getControlValue(key: string): unknown {
-		return this.plugin.settings[key as keyof LoamDictateSettings];
+		return this.plugin.settings[key as keyof SpokenSettings];
 	}
 
 	async setControlValue(key: string, value: unknown): Promise<void> {
-		const k = key as keyof LoamDictateSettings;
+		const k = key as keyof SpokenSettings;
 		const normalise = NORMALISE[k];
 		Object.assign(this.plugin.settings, { [k]: normalise ? normalise(value) : value });
 		await this.plugin.saveSettings();
@@ -100,7 +93,7 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 		const s = this.plugin.settings;
 		const on = (p: Provider) => () => s.provider === p;
 		// With one provider to offer there is nothing to choose, so no dropdown.
-		const offered = visibleProviders(s);
+		const offered = visibleProviders();
 		return [
 			{
 				name: "Transcribe with",
@@ -122,27 +115,8 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 				control: { type: "text", key: "geminiModel", placeholder: DEFAULT_MODEL },
 			},
 			{
-				name: PROVIDER_FIELDS.loam[0],
-				desc: "The address of your Loam UI server. Takes are sent here and nowhere else. Find it and the token in Loam UI → Settings → Dictation → Obsidian.",
-				visible: on("loam"),
-				control: { type: "text", key: "server", placeholder: "https://loam.example.net" },
-			},
-			{
-				name: PROVIDER_FIELDS.loam[1],
-				desc: LOAM_TOKEN_DESC,
-				visible: on("loam"),
-				render: (setting) => {
-					setting.setName(PROVIDER_FIELDS.loam[1]).setDesc(LOAM_TOKEN_DESC);
-					setting.addText((t) => {
-						t.inputEl.type = "password";
-						t.inputEl.autocomplete = "off";
-						t.setValue(s.token).onChange((v) => this.setControlValue("token", v));
-					});
-				},
-			},
-			{
 				name: "Dictate from the phone's toolbar",
-				desc: "Settings → Toolbar → Add global command → Loam Dictate: Dictate.",
+				desc: "Settings → Toolbar → Add global command → Spoken: Dictate.",
 				aliases: ["Mobile toolbar"],
 			},
 			{
@@ -193,7 +167,7 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 	private geminiKey(setting: Setting): void {
 		const s = this.plugin.settings;
 		setting.setName(PROVIDER_FIELDS.gemini[0]).setDesc(GEMINI_KEY_DESC);
-		const result = setting.descEl.createEl("p", { cls: "setting-item-description loam-dictate-keycheck" });
+		const result = setting.descEl.createEl("p", { cls: "setting-item-description spoken-keycheck" });
 		this.keyHelp(setting.descEl);
 		setting
 			.addText((t) => {
@@ -214,7 +188,7 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 
 	/** The steps to a key, folded under the key field. The README repeats KEY_STEPS word for word. */
 	private keyHelp(parent: HTMLElement): void {
-		const details = parent.createEl("details", { cls: "loam-dictate-keyhelp" });
+		const details = parent.createEl("details", { cls: "spoken-keyhelp" });
 		details.createEl("summary", { text: "How to get a Gemini API key" });
 		const list = details.createEl("ol");
 		for (const step of KEY_STEPS) {
@@ -252,12 +226,11 @@ export class LoamDictateSettingTab extends PluginSettingTab {
 
 const GEMINI_KEY_DESC =
 	"Recordings go from this device to Google under your key and nowhere else. The key is stored in plain text in this plugin's settings file inside the vault.";
-const LOAM_TOKEN_DESC = "Stored in plain text in this plugin's settings file inside the vault.";
 const TERMS_NOTE_DESC =
 	"A note in this vault of names and terms you want spelled right, one per line. It is read on every take, with the open note's title and headings added.";
 const OLD_TERMS_NAME = "Names and terms from before 0.2";
 const REPORT_DESC =
-	"Opens a new issue on GitHub with the plugin version, Obsidian version, platform and provider filled in. Never your key, a server address or a recording.";
+	"Opens a new issue on GitHub with the plugin version, Obsidian version, platform and provider filled in. Never your key or a recording.";
 
 type Part = string | { text: string; href: string };
 
@@ -270,7 +243,7 @@ export const KEY_STEPS: Part[][] = [
 	[
 		"Select Create API key. The first time, Google asks you to accept its terms of service, and AI Studio may then create a Google Cloud project and a key for you.",
 	],
-	["Copy the key, paste it into Gemini API key in Loam Dictate's settings, and press Check key."],
+	["Copy the key, paste it into Gemini API key in Spoken's settings, and press Check key."],
 	["Treat the key like a password: anyone who has it can use your quota."],
 ];
 export const KEY_PRICING: Part[] = [

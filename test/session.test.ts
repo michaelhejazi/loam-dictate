@@ -203,11 +203,11 @@ describe("the sheet's session, through every way out", () => {
 		s.time.advance(8_000);
 		const stopping = s.session.stop();
 		await flush();
-		s.tx.calls[0].reject(new TranscribeError("Loam couldn't be reached. The recording is still here.", 0));
+		s.tx.calls[0].reject(new TranscribeError("Google couldn't be reached. The recording is still here.", 0));
 		await stopping;
 		expect(s.session.phase).toEqual({
 			kind: "failed",
-			message: "Loam couldn't be reached. The recording is still here.",
+			message: "Google couldn't be reached. The recording is still here.",
 			durationMs: 8_000,
 			takeKept: true,
 		});

@@ -7,7 +7,7 @@ export const DEFAULT_TERMS_PATH = "Dictation terms.md";
 
 /** The two lines at the top of a note the plugin creates. Obsidian comments, so the parser skips them. */
 export const NOTE_HEADER =
-	"%% Names and terms Loam Dictate should spell right: one per line, or several on a line separated by commas. %%\n" +
+	"%% Names and terms Spoken should spell right: one per line, or several on a line separated by commas. %%\n" +
 	"%% Headings, list markers, blank lines and these comment lines are ignored. The open note's title and headings are added on their own. %%\n";
 
 export interface NoteStore {

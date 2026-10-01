@@ -3,7 +3,7 @@
 With the Gemini provider the plugin calls Google's Interactions API directly,
 under the user's own key. This is what it sends and how it reads the answer;
 `src/gemini.ts` implements it and `test/fake-gemini.mjs` is the fake the tests
-run against. It is the same request the Loam UI server sends for dictation.
+run against.
 
 *Written 2026-09-30 from Google's docs as they read that day:
 [transcribe](https://ai.google.dev/gemini-api/docs/transcribe),
@@ -37,7 +37,8 @@ Content-Type: application/json
   proved on an iPhone.
 - `mode: "smart"` is the string form the transcribe guide shows. The
   Interactions reference describes the mode as an object with `"type": "smart"`
-  or an enum; the string is what the Loam server sends and is kept.
+  or an enum; the string is kept, because it is the form already proven
+  against Gemini.
 - The plugin waits up to 150 s. The request goes through Obsidian's
   `requestUrl`, so no browser CORS applies.
 

@@ -35,7 +35,7 @@ vi.mock("obsidian", () => {
 });
 
 const { TFile } = await import("obsidian");
-const { default: LoamDictatePlugin } = await import("../src/main");
+const { default: SpokenPlugin } = await import("../src/main");
 const { DEFAULT_SETTINGS } = await import("../src/settings");
 
 /** A vault holding some files, a workspace that records what it opened, and the private settings window. */
@@ -58,31 +58,29 @@ function app(files: Record<string, string> = {}) {
 
 const secrets = {
 	geminiKey: "fake-gemini-key-not-a-secret",
-	server: "https://loam.example.net",
-	token: "fake-token-not-a-secret",
 };
 
 describe("Report a problem", () => {
 	it("pre-fills the plugin version, Obsidian version, platform and provider, and nothing else", () => {
-		const plugin = new LoamDictatePlugin(app().a as never, {} as never);
-		plugin.settings = { ...DEFAULT_SETTINGS, ...secrets, provider: "loam" };
+		const plugin = new SpokenPlugin(app().a as never, {} as never);
+		plugin.settings = { ...DEFAULT_SETTINGS, ...secrets };
 		const url = plugin.reportUrl();
 		expect(url.startsWith(`${REPO_URL}/issues/new?body=`)).toBe(true);
 		const body = decodeURIComponent(url.slice(url.indexOf("body=") + 5));
 		expect(body).toBe(
-			issueBody({ pluginVersion: "0.3.0", obsidianVersion: "1.9.14", platform: "mobile, Android", provider: "A Loam server" }),
+			issueBody({ pluginVersion: "0.3.0", obsidianVersion: "1.9.14", platform: "mobile, Android", provider: "Gemini, your own key" }),
 		);
 		expect(body.split("\n").filter((l) => l.startsWith("- "))).toEqual([
 			"- Plugin version: 0.3.0",
 			"- Obsidian version: 1.9.14",
 			"- Platform: mobile, Android",
-			"- Provider: A Loam server",
+			"- Provider: Gemini, your own key",
 		]);
 	});
 
-	it("never carries the key, the token or the server address, in any provider", () => {
-		for (const provider of ["gemini", "loam"] as const) {
-			const plugin = new LoamDictatePlugin(app().a as never, {} as never);
+	it("never carries the key, in any provider", () => {
+		for (const provider of ["gemini"] as const) {
+			const plugin = new SpokenPlugin(app().a as never, {} as never);
 			plugin.settings = { ...DEFAULT_SETTINGS, ...secrets, provider };
 			const url = plugin.reportUrl();
 			const body = decodeURIComponent(url);
@@ -90,7 +88,6 @@ describe("Report a problem", () => {
 				expect(url).not.toContain(s);
 				expect(body).not.toContain(s);
 			}
-			expect(body).not.toMatch(/loam\.example/);
 		}
 	});
 
@@ -99,7 +96,7 @@ describe("Report a problem", () => {
 		expect(platformName({ ...desktop, isMacOS: true })).toBe("desktop, macOS");
 		expect(platformName({ ...desktop, isMacOS: false, isWin: true })).toBe("desktop, Windows");
 		expect(platformName({ ...desktop, isMobile: true, isIosApp: true, isMacOS: true })).toBe("mobile, iOS");
-		expect(issueUrl({ pluginVersion: "1", obsidianVersion: "2", platform: "p", provider: "q" })).toMatch(/^https:\/\/github\.com\/michaelhejazi\/loam-dictate\/issues\/new\?body=/);
+		expect(issueUrl({ pluginVersion: "1", obsidianVersion: "2", platform: "p", provider: "q" })).toMatch(/^https:\/\/github\.com\/michaelhejazi\/spoken\/issues\/new\?body=/);
 	});
 
 	it("the issue template asks for the same four things and says nothing else is needed", () => {
@@ -112,14 +109,14 @@ describe("Report a problem", () => {
 describe("opening the terms note", () => {
 	it("creates the note, opens it in a tab, says so in a notice, and never calls the private settings close", async () => {
 		const { a, files, opened, settingClose } = app();
-		const plugin = new LoamDictatePlugin(a as never, {} as never);
+		const plugin = new SpokenPlugin(a as never, {} as never);
 		plugin.settings = { ...DEFAULT_SETTINGS };
 		notices.splice(0);
 		await plugin.openTermsNote();
 		expect(Object.keys(files)).toEqual(["Dictation terms.md"]);
 		expect(opened).toEqual(["Dictation terms.md"]);
 		expect(settingClose).not.toHaveBeenCalled();
-		expect(notices).toEqual(["Loam Dictate: Dictation terms.md is open in a new tab. Close settings to see it."]);
+		expect(notices).toEqual(["Spoken: Dictation terms.md is open in a new tab. Close settings to see it."]);
 	});
 
 	it("no source file reaches for app.setting", () => {

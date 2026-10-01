@@ -91,16 +91,16 @@ describe("the sheet's header", () => {
 		"%s: the note name is the right-hand element and reserves room for the close button",
 		(_, p) => {
 			const head = draw(p as Phase).children[0];
-			expect(head.cls).toEqual(["loam-dictate-head"]);
+			expect(head.cls).toEqual(["spoken-head"]);
 			const into = head.children[head.children.length - 1];
-			expect(into.cls).toEqual(["loam-dictate-into", "loam-dictate-beside-close"]);
+			expect(into.cls).toEqual(["spoken-into", "spoken-beside-close"]);
 			expect(into.text + into.children.map((c) => c.text).join("")).toBe("into A very long note name that would run under the close button");
 		},
 	);
 
 	it("styles.css gives that class its room against Obsidian's modal, without touching the close button", () => {
 		const css = readFileSync("styles.css", "utf8");
-		const rule = /\.modal\.loam-dictate-modal \.loam-dictate-into\.loam-dictate-beside-close \{([^}]*)\}/.exec(css);
+		const rule = /\.modal\.spoken-modal \.spoken-into\.spoken-beside-close \{([^}]*)\}/.exec(css);
 		expect(rule?.[1]).toMatch(/margin-inline-end: var\(--size-4-12, 48px\);/);
 		expect(css).not.toMatch(/modal-close-button|modal-header-button/);
 	});

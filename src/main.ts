@@ -7,13 +7,13 @@ import { PROVIDERS, makeTranscriber } from "./provider";
 import { mediaRecorderFactory } from "./recorder";
 import { realClock } from "./session";
 import { Signals, browserSignalEnv } from "./signals";
-import { DEFAULT_SETTINGS, LoamDictateSettingTab, LoamDictateSettings, clampMinutes, upgradeSettings } from "./settings";
+import { DEFAULT_SETTINGS, SpokenSettingTab, SpokenSettings, clampMinutes, upgradeSettings } from "./settings";
 import { NoteStore, ensureTermsNote, moveOldTerms, readTermsNote, termsPath } from "./termsnote";
 import { buildTerms } from "./vocabulary";
 import { ScreenWake, browserWakeEnv } from "./wakelock";
 
-export default class LoamDictatePlugin extends Plugin {
-	settings: LoamDictateSettings = { ...DEFAULT_SETTINGS };
+export default class SpokenPlugin extends Plugin {
+	settings: SpokenSettings = { ...DEFAULT_SETTINGS };
 	private open = new Set<DictateModal>();
 	/** Shared by every take, so the settings tab can say how the moments reach this device. */
 	readonly signals = new Signals(browserSignalEnv);
@@ -34,10 +34,10 @@ export default class LoamDictatePlugin extends Plugin {
 			// The same command, so the ribbon behaves exactly as the toolbar does.
 			const editor = this.app.workspace.activeEditor;
 			if (editor?.editor) void this.dictate(editor.editor, editor);
-			else new Notice("Loam Dictate: open a note in edit mode first.");
+			else new Notice("Spoken: open a note in edit mode first.");
 		});
 
-		this.addSettingTab(new LoamDictateSettingTab(this.app, this));
+		this.addSettingTab(new SpokenSettingTab(this.app, this));
 
 		// Leaving the note throws the take away, the same rule as the app.
 		this.registerEvent(
@@ -57,7 +57,7 @@ export default class LoamDictatePlugin extends Plugin {
 	private async dictate(editor: Editor, ctx: MarkdownFileInfo): Promise<void> {
 		const file = ctx.file;
 		if (!file) {
-			new Notice("Loam Dictate: open a note in edit mode first.");
+			new Notice("Spoken: open a note in edit mode first.");
 			return;
 		}
 		const terms = () => this.termsFor(file);
@@ -126,7 +126,7 @@ export default class LoamDictatePlugin extends Plugin {
 		const moved = await moveOldTerms(this.settings, this.notes, this.termsPath());
 		if (had && this.settings.terms === undefined) await this.saveSettings();
 		if (moved === "moved into the note") {
-			new Notice(`Loam Dictate: your names and terms are now in the note ${this.termsPath()}.`);
+			new Notice(`Spoken: your names and terms are now in the note ${this.termsPath()}.`);
 		}
 	}
 
@@ -141,7 +141,7 @@ export default class LoamDictatePlugin extends Plugin {
 		const file = this.app.vault.getAbstractFileByPath(path);
 		if (!(file instanceof TFile)) return;
 		await this.app.workspace.getLeaf("tab").openFile(file);
-		new Notice(`Loam Dictate: ${path} is open in a new tab. Close settings to see it.`);
+		new Notice(`Spoken: ${path} is open in a new tab. Close settings to see it.`);
 	}
 
 	/** Adds 0.1.x's list to the end of the terms note and drops it from settings. */

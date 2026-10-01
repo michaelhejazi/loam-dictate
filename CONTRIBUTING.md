@@ -1,4 +1,4 @@
-# Contributing to Loam Dictate
+# Contributing to Spoken
 
 Thank you for wanting to help. Bug reports, fixes and small improvements are
 all welcome. For anything larger than a fix, please open an issue first so we
@@ -17,8 +17,8 @@ npm run lint     # eslint-plugin-obsidianmd, the community directory's checks
 
 CI runs all three on every push and pull request
 (`.github/workflows/ci.yml`). The tests need no device, no microphone and no
-network: the transcribers are tested against fakes that serve real HTTP on a
-local port (`test/fake-gemini.mjs`, `test/fake-loam.mjs`), and the
+network: the transcriber is tested against a fake that serves real HTTP on a
+local port (`test/fake-gemini.mjs`), and the
 microphone, wake lock and vibration are fakes too.
 
 `npm run lint` must report no errors. Its warnings are kept on purpose and
@@ -34,21 +34,17 @@ written.
 ### What the tests cover
 
 The fake Gemini (`test/fake-gemini.mjs`) serves the interactions endpoint and
-model records; its key is `fake-gemini-key-not-a-secret`. The fake Loam route
-(`test/fake-loam.mjs`) serves the self-hosted route in
-[docs/dictate-route.md](docs/dictate-route.md). Over those and other fakes,
-the tests cover:
+model records; its key is `fake-gemini-key-not-a-secret`. Over it and the
+other fakes, the tests cover:
 
-- the request each provider builds: for Gemini, the JSON body with and without
+- the request the Gemini provider builds: the JSON body with and without
   terms, the base64 audio and the MIME mapping for WebM and MP4
 - the sentence shown for each error, and Gemini's vocabulary fallback
 - Check key's request and its outcomes: the key works, refused, unknown model,
   Google unreachable
-- which providers the settings tab offers on a fresh install and on one with a
-  self-hosted server saved, over a stand-in for Obsidian 1.13's declarative
+- the settings tab's rows, over a stand-in for Obsidian 1.13's declarative
   settings (`getSettingDefinitions()`) that draws only the visible rows
-- the Report a problem link's body, and that it never carries a key, token or
-  address
+- the Report a problem link's body, and that it never carries a key
 - opening the terms note without Obsidian's private settings API
 - the terms note parsed from `test/fixtures/Dictation terms.md`, the vocabulary
   list and its caps, and the move from 0.1's settings
@@ -64,22 +60,11 @@ Use a test vault, not the one you keep your notes in.
 
 1. `npm run build` (or `npm run dev` to rebuild on every change).
 2. Copy `main.js`, `manifest.json` and `styles.css` into
-   `<vault>/.obsidian/plugins/loam-dictate/`. A symlink of the repository to
+   `<vault>/.obsidian/plugins/spoken/`. A symlink of the repository to
    that folder saves copying each time.
-3. In Obsidian, Settings → Community plugins → enable **Loam Dictate**.
-
-Without a Gemini key, run the fake self-hosted route:
-
-```sh
-npm run fake     # serves http://127.0.0.1:8787/api/dictate
-```
-
-With Obsidian closed, put
-`{"server": "http://127.0.0.1:8787", "token": "fake-token-not-a-secret"}` in
-`<vault>/.obsidian/plugins/loam-dictate/data.json`. The settings then offer
-**A Loam server** under **Transcribe with**, and the fake answers each take
-with a sentence describing the audio it received. `PORT` and `HOST`
-change where it listens.
+3. In Obsidian, Settings → Community plugins → enable **Spoken**.
+4. Paste a Gemini API key in its settings and press Check key. A take in the
+   vault needs a real key; the fake Gemini is for the tests only.
 
 ## Where things are written
 
@@ -105,10 +90,9 @@ Please keep it that way.
 |---|---|
 | `src/main.ts` | The plugin: the Dictate command and ribbon icon, settings, reading the terms note through the vault, Check key and the Report a problem link. |
 | `src/transcriber.ts` | `Transcriber.transcribe(audio, mimeType, terms) → {text, biased}`, the only thing the sheet knows about transcribing. |
-| `src/provider.ts` | The provider setting, which providers the settings offer, and `makeTranscriber()`, the one place a transcriber is constructed. |
+| `src/provider.ts` | The provider setting, the providers there are, and `makeTranscriber()`, the one place a transcriber is constructed. |
 | `src/gemini.ts` | `GeminiTranscriber`: the take to Gemini's Interactions API under the user's key. |
 | `src/keycheck.ts` | Check key: one GET for the model's record, and what the answer means. |
-| `src/loam.ts` | `LoamTranscriber`: a second provider, the take to a self-hosted server's dictation route ([docs/dictate-route.md](docs/dictate-route.md)). The settings offer it only where a server address or token is already saved. |
 | `src/http.ts` | What the requests share: Obsidian's `requestUrl` (so no browser CORS applies) and the wait. |
 | `src/feedback.ts` | The Report a problem link and its four facts. |
 | `src/settings.ts` | The settings, their upgrade from 0.1, the settings tab and the key steps. |
@@ -121,16 +105,16 @@ Please keep it that way.
 | `src/insert.ts`, `src/vocabulary.ts` | The spacing rule and the terms list. |
 
 Another way to transcribe, such as a hosted service, is another `Transcriber`
-chosen in `makeTranscriber()` and offered in `visibleProviders()`. The sheet
-does not change.
+added to `PROVIDERS` and chosen in `makeTranscriber()`. The sheet does not
+change; with two providers the settings show the Transcribe with dropdown.
 
 Everything the plugin creates is released when it closes: the microphone, the
 screen wake lock, the clock, the drawing loop and the listeners. Unloading the
 plugin closes any open sheet.
 
 `design/dictate-sheet.html` is the design the sheet was built from: each of
-its states in one page, open it in a browser. `docs/` holds the contracts of
-the two requests, the notes for submitting to the community directory, and
+its states in one page, open it in a browser. `docs/` holds the contract of
+the requests to Gemini, the notes for submitting to the community directory, and
 the README's screenshots (`docs/images/`).
 
 ## A good pull request
@@ -145,13 +129,12 @@ the README's screenshots (`docs/images/`).
   lookbehind (older iOS), as Obsidian's
   [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)
   ask.
-- No keys, tokens or server addresses anywhere: in code, tests, screenshots or
+- No keys or tokens anywhere: in code, tests, screenshots or
   the description. The fakes' credentials are fixtures that say they are not
   secrets.
 
-If a change touches the requests to Gemini or to a Loam server, update the
-contract in `docs/gemini-request.md` or `docs/dictate-route.md` and the fake
-that implements it.
+If a change touches the requests to Gemini, update the contract in
+`docs/gemini-request.md` and the fake that implements it.
 
 ## Releases
 
@@ -167,7 +150,7 @@ Releases are cut by the maintainer:
    then tests, builds, and creates the GitHub release with `main.js`,
    `manifest.json` and `styles.css` attached, each with a GitHub build
    provenance attestation (`actions/attest-build-provenance`), so a download
-   can be checked with `gh attestation verify main.js --repo michaelhejazi/loam-dictate`.
+   can be checked with `gh attestation verify main.js --repo michaelhejazi/spoken`.
    It then writes the release URL, the asset sizes, the SHA-256 of each asset
    and the attestation's URL as a git note on the tagged commit, which you can
    read without GitHub access:

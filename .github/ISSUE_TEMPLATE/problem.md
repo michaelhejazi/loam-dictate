@@ -1,10 +1,10 @@
 ---
 name: Report a problem
-about: Something in Loam Dictate didn't work as you expected.
+about: Something in Spoken didn't work as you expected.
 ---
 
 <!--
-Settings → Loam Dictate → Report a problem opens this page with the four
+Settings → Spoken → Report a problem opens this page with the four
 lines under "Where" already filled in. If you came here another way, please
 fill them in yourself.
 

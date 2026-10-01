@@ -1,10 +1,10 @@
 // "Report a problem": a link to a new GitHub issue on this plugin's repository
 // with the body filled in. The body carries the plugin version, the Obsidian
 // version, the platform and the provider in use, and nothing else: never a
-// key, a server address or a recording. .github/ISSUE_TEMPLATE/problem.md asks
+// key or a recording. .github/ISSUE_TEMPLATE/problem.md asks
 // for the same four things.
 
-export const REPO_URL = "https://github.com/michaelhejazi/loam-dictate";
+export const REPO_URL = "https://github.com/michaelhejazi/spoken";
 
 export interface ReportInfo {
 	pluginVersion: string;
@@ -21,7 +21,7 @@ export function issueBody(info: ReportInfo): string {
 		"",
 		"<!-- What you did, what you expected, and what you saw instead. Please don't paste your API key or attach a recording. -->",
 		"",
-		"**Where** (filled in by Loam Dictate)",
+		"**Where** (filled in by Spoken)",
 		"",
 		`- Plugin version: ${info.pluginVersion}`,
 		`- Obsidian version: ${info.obsidianVersion}`,

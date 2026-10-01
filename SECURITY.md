@@ -16,7 +16,7 @@ unless they ask not to be.
 ## Where your key lives
 
 Your Gemini API key is stored in the plugin's settings file inside your vault,
-`.obsidian/plugins/loam-dictate/data.json`, in plain text, as every Obsidian
+`.obsidian/plugins/spoken/data.json`, in plain text, as every Obsidian
 plugin's settings are. It leaves your device only in the `x-goog-api-key`
 header of requests to Google's Gemini API, made when you stop a recording,
 press Try again or press Check key. The plugin has no server of its own and no

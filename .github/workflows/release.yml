@@ -5,7 +5,7 @@
 # the tag (refs/notes/release), so the release can be checked with git alone.
 # The three assets are attested with GitHub's build provenance first, so
 # anyone can check that a download was built here, from this tag
-# (`gh attestation verify main.js --repo michaelhejazi/loam-dictate`).
+# (`gh attestation verify main.js --repo michaelhejazi/spoken`).
 name: Release
 
 on:
@@ -48,7 +48,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" main.js manifest.json styles.css \
-            --title "$GITHUB_REF_NAME" --notes "Loam Dictate $GITHUB_REF_NAME. Install or update from Obsidian's community plugins (Settings → Community plugins). The three files carry GitHub build provenance: ${{ steps.attest.outputs.attestation-url }}"
+            --title "$GITHUB_REF_NAME" --notes "Spoken $GITHUB_REF_NAME. Install or update from Obsidian's community plugins (Settings → Community plugins). The three files carry GitHub build provenance: ${{ steps.attest.outputs.attestation-url }}"
       - name: Record the release on the tag
         env:
           GH_TOKEN: ${{ github.token }}

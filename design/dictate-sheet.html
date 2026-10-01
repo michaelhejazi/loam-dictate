@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Loam Dictate — the sheet, six states</title>
+<title>Spoken — the sheet, six states</title>
 <style>
   /* ------------------------------------------------------------------
      Obsidian's own variables, with the default theme's values so this
@@ -147,7 +147,7 @@
 </head>
 <body class="dark-preview">
 <button class="toggle" onclick="flip()">Light theme</button>
-<h1>Loam Dictate — the sheet, six states</h1>
+<h1>Spoken — the sheet, six states</h1>
 <p class="sub">Pixel width, Obsidian's own variables. <b>The mic is a command on the mobile toolbar</b>, first position. Pressing it opens Obsidian's modal, which is a bottom sheet on a phone. The sheet never covers the note's name: every state says where the words will land. <b>Words land only on Insert</b>; leaving the note or closing the sheet throws the take away, same rule as the app.</p>
 
 <div class="row" id="row"></div>
@@ -217,7 +217,7 @@ const states = [
       <div class="hint amber">30 seconds left</div>
       <div class="actions"><span class="btn quiet">Cancel</span><span class="btn primary">Stop</span></div>`) },
 
-  { cap: '<b>4 · Cleaning.</b> The take is on its way to Loam. The wave freezes and greys; nothing else moves. Cancel here throws the take away.',
+  { cap: '<b>4 · Cleaning.</b> The take is on its way to Gemini. The wave freezes and greys; nothing else moves. Cancel here throws the take away.',
     body: note('') + sheet(head('quiet', '<span class="spin"></span>Cleaning up…') + `
       <div class="clock"><span class="big" style="color:var(--text-faint)">0:42</span></div>
       ${wave(0, true)}
@@ -230,10 +230,10 @@ const states = [
       <div class="meta"><span>58 words · 0:42</span><span class="link">Retake</span></div>
       <div class="actions"><span class="btn quiet">Discard</span><span class="btn primary">Insert</span></div>`) },
 
-  { cap: '<b>6 · Loam didn\'t answer.</b> The audio is kept in the sheet, so a dropped connection on a trail costs a retry, not the take. The server\'s own sentence is shown, not a code.',
+  { cap: '<b>6 · Google didn\'t answer.</b> The audio is kept in the sheet, so a dropped connection on a trail costs a retry, not the take. A sentence is shown, not a code.',
     body: note('') + sheet(head('quiet', 'Not cleaned') + `
       <div class="clock"><span class="big" style="color:var(--text-faint)">0:42</span></div>
-      <div class="err">Loam couldn't be reached. The recording is still here.<small>Try again when you have signal, or discard it.</small></div>
+      <div class="err">Google couldn't be reached. The recording is still here.<small>Try again when you have signal, or discard it.</small></div>
       <div class="actions"><span class="btn quiet danger">Discard</span><span class="btn primary">Try again</span></div>`) },
 ];
 

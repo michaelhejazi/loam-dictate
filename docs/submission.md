@@ -1,7 +1,12 @@
-# Submitting to Obsidian's community directory
+# Spoken: what is left to do by hand
 
-This page is for the repository's owner, who submits by hand. Everything
-here was read from Obsidian's developer docs on 2026-10-01
+The plugin was renamed from Loam Dictate to Spoken in 0.4.0, and its id from
+`loam-dictate` to `spoken`. Obsidian locks a plugin's id once it is listed, so
+the directory's `loam-dictate` entry goes and the plugin is submitted again
+under the new id. The repository is ready for that; what follows is the
+owner's, in order, because each step needs his accounts.
+
+Obsidian's directory docs were read on 2026-10-01
 ([Submit your plugin](https://docs.obsidian.md/Plugins/Releasing/Submit+your+plugin),
 [Set up and claim](https://docs.obsidian.md/community-directory/set-up-and-claim),
 [Manage your plugin or theme](https://docs.obsidian.md/community-directory/manage-entry),
@@ -9,66 +14,80 @@ here was read from Obsidian's developer docs on 2026-10-01
 [Developer policies](https://docs.obsidian.md/community-directory/developer-policies),
 [Submission requirements for plugins](https://docs.obsidian.md/community-directory/submission-requirements-for-plugins),
 [Plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)).
+Submission is a form on community.obsidian.md, and the directory reads the
+rest from `manifest.json` at the head of `main`.
 
-Submission is no longer a pull request to `obsidianmd/obsidian-releases`: it
-is a form on community.obsidian.md, and the directory reads the rest from the
-repository.
+## The steps
+
+1. **Rename the repository** to `spoken`, if it is still
+   `michaelhejazi/loam-dictate`: on GitHub, the repository's **Settings** →
+   **General** → **Repository name** → `spoken` → **Rename**. Then set the
+   About description (step 7).
+2. **Archive the old entry.** On [community.obsidian.md](https://community.obsidian.md),
+   signed in, go to **Plugins**, open the `loam-dictate` entry, and archive it
+   from its **...** menu.
+3. **Submit the new one.** **Plugins** → **New plugin**, with the values in
+   *The entry* below; set **Owner** to yourself, agree to the Developer
+   policies, confirm you'll keep supporting the plugin, and **Submit**.
+   If the form answers *"an entry already exists for this repository"*, the
+   archived entry still holds the repository (GitHub keeps the repository's
+   id through a rename, so the directory may see it as the same one). Ask on
+   the forum for the old entry's deletion, as
+   [this thread](https://forum.obsidian.md/t/cannot-resubmit-plugin-after-archiving-an-entry-already-exists-for-this-repository/114435)
+   did, then submit again.
+4. **The automated review** runs on submission: **Manifest**, **Releases**,
+   **Source code** and **Build verification** (it runs `npm run build` and
+   compares the result with the 0.4.0 release's `main.js`). Errors block
+   installation; warnings don't. **Review branch** → leave the branch blank
+   → **Run preview scan** runs it again on demand.
+5. **Edit listing** on the new entry: payment type **Optional payment** (the
+   FAQ's answer for a plugin that relies on a third-party service that may
+   charge, even with a free tier; Spoken needs a Gemini key), and the
+   categories.
+6. **On the Pixel**: Settings → Community plugins → **Loam Dictate** →
+   **Uninstall**; that deletes its folder, the key in its `data.json` with it.
+   Then Settings → BRAT → remove `michaelhejazi/loam-dictate` from the beta
+   plugin list, and **Add beta plugin** → `michaelhejazi/spoken`. Enable
+   Spoken, paste the Gemini key, press Check key, and re-add *Spoken: Dictate*
+   to the toolbar (Settings → Toolbar). The terms note stays in the vault and
+   is found again at `Dictation terms.md`. Once the directory lists Spoken,
+   remove it from BRAT's list, so only Obsidian's updater installs releases.
+7. **The repository's About box** (the gear beside *About* on the code page),
+   any time:
+
+   | Field | Text |
+   |---|---|
+   | Description | `Speak into a note on phone or desktop and get clean text at the cursor: transcribed by Gemini under your own API key, with your own names spelled right.` |
+   | Website | leave empty until the directory lists it, then `https://obsidian.md/plugins?id=spoken` |
+   | Topics | `obsidian`, `obsidian-plugin`, `dictation`, `speech-to-text`, `transcription`, `gemini`, `voice-notes` |
+
+GitHub redirects the old repository address to the new one, for the web
+pages, the API and git, so links to `michaelhejazi/loam-dictate` (old issues,
+old release notes, a clone's remote) keep working. The redirect holds only
+while no new repository takes the old name. The README's images are linked by
+absolute `raw.githubusercontent.com` URL, because the listing renders the
+README away from the repository; they already point at `michaelhejazi/spoken`,
+and so do the README's other links and the plugin's Report a problem link.
 
 ## The entry
 
-The form asks for two things; the directory reads the rest from
-`manifest.json` at the head of the default branch (`main`).
-
 | Field | Value |
 |---|---|
-| GitHub repository URL (the form) | `https://github.com/michaelhejazi/loam-dictate` |
+| GitHub repository URL (the form) | `https://github.com/michaelhejazi/spoken` |
 | Owner (the form) | Myself |
-| id (manifest) | `loam-dictate` |
-| name (manifest) | `Loam Dictate` |
+| id (manifest) | `spoken` |
+| name (manifest) | `Spoken` |
 | author (manifest) | `Michael Hejazi` |
 | authorUrl (manifest) | `https://github.com/michaelhejazi` |
-| description (manifest) | `Dictate into your notes on phone or desktop: record a spoken take, have Gemini transcribe it with your own API key, and insert the words at the cursor.` |
+| description (manifest) | `Speak into a note on phone or desktop and get clean text at the cursor: transcribed by Gemini under your own API key, with your own names spelled right.` |
 
 `authorUrl` (in `manifest.json`) and `homepage` (in `package.json`) point to
 the author's GitHub profile for now. When his own site is ready, both change to
 it in a commit on `main`, with no release: the directory reads `manifest.json`
 from the head of `main`, and neither field is in the plugin's code.
 
-After it is listed, **Edit listing** sets the categories and the payment type.
-The FAQ says a plugin that relies on a third-party service that may charge is
-**Optional payment**, even when that service has a free tier, so that is the
-honest choice for a plugin that needs a Gemini key.
-
-## Before you submit
-
-1. **The repository must be readable by the directory**, so make
-   `michaelhejazi/loam-dictate` public first (see *Going public* below).
-2. The release named by `manifest.json`'s `version` exists, with `main.js`,
-   `manifest.json` and `styles.css` attached (the release workflow does this on
-   a tag).
-3. `LICENSE` (MIT) and `README.md` are at the root. They are.
-
-## Steps
-
-1. Go to [community.obsidian.md](https://community.obsidian.md) and select
-   **Sign in** (upper right). Sign in with your Obsidian account.
-2. On your **Community profile**, under **GitHub**, select **Connect** and
-   authorise on GitHub. This lets the directory verify that you own the
-   repository.
-3. In the sidebar, go to **Plugins** → **New plugin**. Enter the GitHub
-   repository URL above, set **Owner** to yourself, agree to the Developer
-   policies, confirm that you'll keep supporting the plugin (or remove or
-   transfer it if you can't), and select **Submit**.
-4. The directory reviews it automatically: **Manifest**, **Releases**,
-   **Source code** and **Build verification** (it runs `npm run build` and
-   compares the result with the release's `main.js`). Errors block
-   installation; warnings don't. To fix an error, change the repository and
-   publish a new release with a higher version; **...** → **Request review**
-   rechecks at once.
-5. On the entry's page, **Review branch** → leave the branch blank for `main`
-   → **Run preview scan** runs the same review on demand, without a release.
-6. Turn on **Action required notifications** in your profile, so a failed
-   check later reaches you by email.
+Turn on **Action required notifications** in your community profile, so a
+failed check later reaches you by email.
 
 ## What the review will see
 
@@ -82,10 +101,10 @@ the deprecated `display` and `setDynamicTooltip`, and raised `minAppVersion`
 to 1.13.0; `versions.json` offers older Obsidian 0.3.1. The two sentence-case
 warnings 0.3.1 had are gone too, but only because the rule reads `setDesc()`
 and `createEl()` text and not a definition's `desc`: the strings still name
-Obsidian's menus (*Settings → Toolbar*, *Loam UI → Settings*) with their
-capitals, on purpose. The directory's scanner may also flag the notices that
-begin "Loam Dictate:", since it doesn't know the plugin's name is a proper
-noun; the repo's lint config lists it as a brand.
+Obsidian's menus (*Settings → Toolbar*) with their capitals, on purpose. The
+directory's scanner may also flag the notices that begin "Spoken:", since it
+doesn't know the plugin's name is a proper noun; the repo's lint config lists
+it as a brand.
 
 The directory's scorecard also checks for GitHub artifact attestations on the
 release assets; `release.yml` attests all three from 0.3.2. The clipboard
@@ -104,7 +123,7 @@ clipboard.
 | Account or payment disclosed | Pass: a Google account and Gemini key are needed; the README links Google's pricing page |
 | `fundingUrl` only for donations | Pass: none |
 | `minAppVersion` appropriate | Pass: 1.13.0, which the declarative settings API needs; the lint rule `no-unsupported-api` finds no newer API in use |
-| Description: action first, ≤ 250 characters, ends with a period, no emoji | Pass: 151 characters |
+| Description: action first, ≤ 250 characters, ends with a period, no emoji | Pass: 152 characters |
 | Node and Electron APIs only on desktop | Pass: none used; `isDesktopOnly: false` |
 | No plugin id in command ids | Pass: the command is `dictate` |
 | Sample code and placeholder names removed | Pass |
@@ -129,53 +148,3 @@ clipboard.
 | No inline styles | Pass: classes in `styles.css`, Obsidian's variables |
 | No regex lookbehind (iOS) | Pass |
 | `const`/`let`, async/await | Pass |
-
-## Going public
-
-The repository holds the plugin's files only: a root commit, the real commits
-from the first design to 0.3.0 with their dates and messages, and then 0.3.1
-onwards. The repository was created fresh on 2026-10-01, and that history was
-pushed into it the same day at 17:01 UTC, so nothing older is on GitHub under
-any hash. Every version tag has its release, cut by the release workflow from
-the new commits. What is left is yours:
-
-1. Settings → General → Danger zone → **Change visibility** → Public.
-2. Settings → Security → **Private vulnerability reporting** → Enable, so the
-   **Report a vulnerability** button that `SECURITY.md` points to exists. It
-   is only offered on public repositories.
-3. The screenshots: done. `docs/images/recording.png`, `cleaning.png` and
-   `ready.png` sit at the top of the README, by absolute URL, since the
-   directory's listing renders the README away from the repository.
-4. Submit on the form (*Steps* above).
-5. Once listed, **Edit listing** → payment type **Optional payment** (see
-   *The entry*), and the categories.
-6. The repository's About box (the gear beside *About* on the code page), any
-   time:
-
-   | Field | Text |
-   |---|---|
-   | Description | `Obsidian plugin: dictate into your notes on phone or desktop, transcribed by Gemini with your own API key.` |
-   | Website | leave empty until the directory lists it, then `https://obsidian.md/plugins?id=loam-dictate` |
-   | Topics | `obsidian`, `obsidian-plugin`, `dictation`, `speech-to-text`, `transcription`, `gemini`, `voice-notes` |
-
-   Untick *Packages* and *Deployments* in the same box; the repository has
-   neither.
-
-## From BRAT to the directory, on your own phone
-
-Your copy was installed by BRAT into `.obsidian/plugins/loam-dictate`. The
-directory lists the plugin under the same id, `loam-dictate`, and Obsidian's
-own updater checks every installed plugin whose id is in the directory: once
-it is listed, Settings → Community plugins → **Check for updates** offers new
-versions of that same folder. Nothing is reinstalled, and your settings,
-including the key in `data.json`, stay where they are.
-
-- **Do not uninstall Loam Dictate** to switch. Uninstalling deletes the
-  folder, and the key and settings with it.
-- **Remove it from BRAT's list** (Settings → BRAT → the beta plugin list →
-  remove `michaelhejazi/loam-dictate`). It isn't required, because both read
-  the same releases from the same repository, but with both watching, the
-  plugin is updated by whichever looks first, and BRAT can install a release
-  before the directory has reviewed it.
-- Once the repository is public, the GitHub token in BRAT's settings is no
-  longer needed for this plugin.

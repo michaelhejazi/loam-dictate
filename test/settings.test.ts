@@ -122,13 +122,12 @@ vi.mock("obsidian", () => {
 });
 
 const { Setting } = await import("obsidian");
-const { LoamDictateSettingTab, upgradeSettings, DEFAULT_SETTINGS, PROVIDER_FIELDS, KEY_STEPS, KEY_PRICING, AI_STUDIO_KEYS_URL, GEMINI_PRICING_URL } =
+const { SpokenSettingTab, upgradeSettings, DEFAULT_SETTINGS, PROVIDER_FIELDS, KEY_STEPS, KEY_PRICING, AI_STUDIO_KEYS_URL, GEMINI_PRICING_URL } =
 	await import("../src/settings");
 const { makeTranscriber, visibleProviders } = await import("../src/provider");
 const { GeminiTranscriber } = await import("../src/gemini");
-const { LoamTranscriber } = await import("../src/loam");
-type Settings = import("../src/settings").LoamDictateSettings;
-type Tab = InstanceType<typeof LoamDictateSettingTab>;
+type Settings = import("../src/settings").SpokenSettings;
+type Tab = InstanceType<typeof SpokenSettingTab>;
 type Def = import("obsidian").SettingDefinitionItem;
 
 const shown = (v: boolean | (() => boolean) | undefined) => (typeof v === "function" ? v() : v !== false);
@@ -174,70 +173,36 @@ function tab(settings: Settings) {
 		openTermsNote: vi.fn(async () => {}),
 		appendOldTerms: vi.fn(async () => {}),
 		checkGeminiKey: vi.fn(async () => ({ outcome: "refused", sentence: "Google refused this key." })),
-		reportUrl: vi.fn(() => "https://github.com/michaelhejazi/loam-dictate/issues/new?body=x"),
+		reportUrl: vi.fn(() => "https://github.com/michaelhejazi/spoken/issues/new?body=x"),
 	};
-	const t = new LoamDictateSettingTab({} as never, plugin as never);
+	const t = new SpokenSettingTab({} as never, plugin as never);
 	draw(t);
 	return { t, plugin, refreshes: () => (t as unknown as { refreshes: number }).refreshes };
 }
 const names = () => drawn.map((r) => r.name);
 const row = (name: string) => drawn.find((r) => r.name === name)!;
 
-describe("migrating settings from 0.1.x", () => {
-	it("an install with a Loam address and token comes up on the Loam provider, saved, with everything kept", () => {
-		const old = { server: "https://loam.example.net", token: "fake-token-not-a-secret", maxMinutes: 7, terms: "Simin\nFlyo" };
-		const { settings, changed } = upgradeSettings(old);
-		expect(changed).toBe(true);
-		expect(settings).toEqual({
-			provider: "loam",
-			geminiKey: "",
-			geminiModel: "gemini-3.5-transcribe",
-			server: "https://loam.example.net",
-			token: "fake-token-not-a-secret",
-			maxMinutes: 7,
-			termsPath: "Dictation terms.md",
-			terms: "Simin\nFlyo",
-		});
-	});
-
+describe("settings as saved", () => {
 	it("a fresh install defaults to Gemini", () => {
 		expect(upgradeSettings(null)).toEqual({ settings: DEFAULT_SETTINGS, changed: false });
 		expect(upgradeSettings({}).settings.provider).toBe("gemini");
-		expect(upgradeSettings({ server: "", token: "", maxMinutes: 5 }).settings.provider).toBe("gemini");
+		expect(upgradeSettings({ maxMinutes: 5 }).settings.provider).toBe("gemini");
 	});
 
-	it("a saved provider is kept whatever else is set", () => {
-		expect(upgradeSettings({ provider: "gemini", server: "https://loam.example.net", token: "t" }).settings.provider).toBe("gemini");
-		expect(upgradeSettings({ provider: "loam" })).toMatchObject({ settings: { provider: "loam" }, changed: false });
+	it("a saved provider this version doesn't have becomes Gemini, saved, with everything else kept", () => {
+		expect(upgradeSettings({ provider: "gemini" })).toMatchObject({ settings: { provider: "gemini" }, changed: false });
+		const { settings, changed } = upgradeSettings({ provider: "elsewhere", maxMinutes: 7, geminiKey: "fake-gemini-key-not-a-secret" });
+		expect(changed).toBe(true);
+		expect(settings).toMatchObject({ provider: "gemini", maxMinutes: 7, geminiKey: "fake-gemini-key-not-a-secret" });
 	});
 });
 
 describe("which providers are offered", () => {
-	it("a fresh install sees only Gemini: no Transcribe with, no Loam anywhere", () => {
-		const settings = upgradeSettings(null).settings;
-		expect(visibleProviders(settings)).toEqual(["gemini"]);
-		tab(settings);
+	it("Gemini is the one provider, so there is no Transcribe with row", () => {
+		expect(visibleProviders()).toEqual(["gemini"]);
+		tab(upgradeSettings(null).settings);
 		expect(names()).not.toContain("Transcribe with");
-		for (const f of PROVIDER_FIELDS.loam) expect(names()).not.toContain(f);
-		expect(drawn.some((r) => /Loam UI|Loam server/.test(r.desc))).toBe(false);
-		expect(drawn.some((r) => under(r.descEl).some((e) => /Loam UI|Loam server/.test(textOf(e))))).toBe(false);
-	});
-
-	it("an install with a Loam address and token saved keeps Loam in the dropdown, on either provider", () => {
-		const saved = { provider: "loam", server: "https://loam.example.net", token: "fake-token-not-a-secret", geminiKey: "fake-gemini-key-not-a-secret" };
-		const { settings } = upgradeSettings(saved);
-		expect(visibleProviders(settings)).toEqual(["gemini", "loam"]);
-		tab(settings);
-		expect(row("Transcribe with").controls[0]).toMatchObject({ value: "loam", options: ["gemini", "loam"] });
-		tab({ ...settings, provider: "gemini" });
-		expect(row("Transcribe with").controls[0]).toMatchObject({ value: "gemini", options: ["gemini", "loam"] });
-	});
-
-	it("either a saved address or a saved token alone is enough, and so is Loam being chosen", () => {
-		expect(visibleProviders({ ...DEFAULT_SETTINGS, server: "https://loam.example.net" })).toEqual(["gemini", "loam"]);
-		expect(visibleProviders({ ...DEFAULT_SETTINGS, token: "fake-token-not-a-secret" })).toEqual(["gemini", "loam"]);
-		expect(visibleProviders({ ...DEFAULT_SETTINGS, provider: "loam" })).toEqual(["gemini", "loam"]);
-		expect(visibleProviders({ ...DEFAULT_SETTINGS, server: "  ", token: "" })).toEqual(["gemini"]);
+		expect(names()).toEqual(expect.arrayContaining(PROVIDER_FIELDS.gemini));
 	});
 });
 
@@ -249,7 +214,7 @@ describe("getting to a working key", () => {
 			["text", "fake-gemini-key-not-a-secret"],
 			["button", "Check key"],
 		]);
-		const result = under(key.descEl).find((e) => e.cls.includes("loam-dictate-keycheck"))!;
+		const result = under(key.descEl).find((e) => e.cls.includes("spoken-keycheck"))!;
 		expect(result.text).toBe("");
 		await key.controls[1].onClick!();
 		expect(plugin.checkGeminiKey).toHaveBeenCalledTimes(1);
@@ -261,7 +226,7 @@ describe("getting to a working key", () => {
 		tab({ ...DEFAULT_SETTINGS });
 		const { descEl } = row("Gemini API key");
 		const help = descEl.children.find((e) => e.tag === "details")!;
-		expect(descEl.children.indexOf(help)).toBe(descEl.children.findIndex((e) => e.cls.includes("loam-dictate-keycheck")) + 1);
+		expect(descEl.children.indexOf(help)).toBe(descEl.children.findIndex((e) => e.cls.includes("spoken-keycheck")) + 1);
 		expect(help.children[0]).toMatchObject({ tag: "summary", text: "How to get a Gemini API key" });
 		expect(help.children[1].children).toHaveLength(KEY_STEPS.length);
 		expect(links(help).map((a) => a.href)).toEqual([AI_STUDIO_KEYS_URL, GEMINI_PRICING_URL]);
@@ -281,40 +246,18 @@ describe("Report a problem", () => {
 	it("is a link in the settings tab to the plugin's pre-filled issue", () => {
 		const { plugin } = tab({ ...DEFAULT_SETTINGS });
 		const report = row("Report a problem");
-		expect(report.desc).toMatch(/Never your key, a server address or a recording/);
+		expect(report.desc).toMatch(/Never your key or a recording/);
 		expect(links(report.controlEl).map((a) => [a.text, a.href])).toEqual([["Open an issue", plugin.reportUrl()]]);
 	});
 });
 
-describe("the provider switch", () => {
-	it("Gemini shows the key as a password field and the model with its default, and no Loam fields", () => {
+describe("the provider's fields", () => {
+	it("Gemini shows the key as a password field and the model with its default", () => {
 		tab({ ...DEFAULT_SETTINGS });
 		expect(names()).toEqual(expect.arrayContaining(PROVIDER_FIELDS.gemini));
-		for (const f of PROVIDER_FIELDS.loam) expect(names()).not.toContain(f);
 		expect(row("Gemini API key").controls[0].inputType).toBe("password");
 		expect(row("Model").controls[0].value).toBe("gemini-3.5-transcribe");
 		expect(row("Model").desc).toMatch(/speech-to-text/);
-	});
-
-	it("Loam shows the address and the token as now, and no Gemini fields", () => {
-		tab({ ...DEFAULT_SETTINGS, provider: "loam", server: "https://loam.example.net" });
-		expect(names()).toEqual(expect.arrayContaining(PROVIDER_FIELDS.loam));
-		for (const f of PROVIDER_FIELDS.gemini) expect(names()).not.toContain(f);
-		expect(row("Server address").controls[0].value).toBe("https://loam.example.net");
-		expect(row("Token").controls[0].inputType).toBe("password");
-	});
-
-	it("switching the dropdown saves the provider and redraws with the other fields", async () => {
-		const settings = { ...DEFAULT_SETTINGS, server: "https://loam.example.net" };
-		const { t, plugin, refreshes } = tab(settings);
-		await row("Transcribe with").controls[0].onChange!("loam");
-		expect(settings.provider).toBe("loam");
-		expect(plugin.saveSettings).toHaveBeenCalled();
-		// Obsidian re-evaluates every row's visible() on refreshDomState; draw() does the same here.
-		expect(refreshes()).toBe(1);
-		draw(t);
-		expect(names()).toContain("Server address");
-		expect(names()).not.toContain("Gemini API key");
 	});
 
 	it("the terms note is one path setting with an Open button, and no in-settings list", () => {
@@ -355,7 +298,6 @@ describe("the provider switch", () => {
 	it("constructs the class for the provider chosen", () => {
 		const http = vi.fn();
 		expect(makeTranscriber(() => ({ ...DEFAULT_SETTINGS }), http)).toBeInstanceOf(GeminiTranscriber);
-		expect(makeTranscriber(() => ({ ...DEFAULT_SETTINGS, provider: "loam" }), http)).toBeInstanceOf(LoamTranscriber);
 	});
 
 	it("the constructed transcriber reads its key at send time, so a new key applies to Try again", async () => {
@@ -371,18 +313,17 @@ describe("the provider switch", () => {
 
 describe("settings search (Obsidian 1.13's declarative settings)", () => {
 	it("the tab is declared, not drawn: no display() of its own", () => {
-		expect(Object.getOwnPropertyNames(LoamDictateSettingTab.prototype)).not.toContain("display");
-		expect(Object.getOwnPropertyNames(LoamDictateSettingTab.prototype)).toContain("getSettingDefinitions");
+		expect(Object.getOwnPropertyNames(SpokenSettingTab.prototype)).not.toContain("display");
+		expect(Object.getOwnPropertyNames(SpokenSettingTab.prototype)).toContain("getSettingDefinitions");
 	});
 
-	it("every row the tab can show is a named, searchable definition, whichever provider is chosen", () => {
+	it("every row the tab can show is a named, searchable definition, including the hidden ones", () => {
 		const { t } = tab({ ...DEFAULT_SETTINGS, terms: "Simin" });
 		const defs = t.getSettingDefinitions();
 		const declared = defs.map((d) => ("name" in d ? d.name : ""));
 		expect(declared).toEqual([
 			"Transcribe with",
 			...PROVIDER_FIELDS.gemini,
-			...PROVIDER_FIELDS.loam,
 			"Dictate from the phone's toolbar",
 			"Longest recording",
 			"Alerts",
@@ -394,7 +335,7 @@ describe("settings search (Obsidian 1.13's declarative settings)", () => {
 	});
 
 	it("a drawn row's name and description, which search reads from the definition, are the ones it draws", () => {
-		for (const settings of [{ ...DEFAULT_SETTINGS, terms: "Simin" }, { ...DEFAULT_SETTINGS, provider: "loam" as const, server: "https://loam.example.net" }]) {
+		for (const settings of [{ ...DEFAULT_SETTINGS }, { ...DEFAULT_SETTINGS, terms: "Simin" }]) {
 			const { t } = tab(settings);
 			const declared = t.getSettingDefinitions().filter((d) => "name" in d && "render" in d && names().includes(d.name));
 			expect(declared.length).toBeGreaterThan(0);
@@ -411,19 +352,15 @@ describe("settings search (Obsidian 1.13's declarative settings)", () => {
 		expect(plugin.saveSettings).toHaveBeenCalledTimes(1);
 	});
 
-	it("what is typed is saved as before: the key and address trimmed, a blank model or note path back to its default", async () => {
-		const settings: Settings = { ...DEFAULT_SETTINGS, provider: "loam" };
+	it("what is typed is saved as before: the key trimmed, a blank model or note path back to its default", async () => {
+		const settings: Settings = { ...DEFAULT_SETTINGS };
 		const { t } = tab(settings);
 		await t.setControlValue("geminiKey", "  fake-gemini-key-not-a-secret ");
 		await t.setControlValue("geminiModel", "   ");
-		await t.setControlValue("server", " https://loam.example.net ");
-		await row("Token").controls[0].onChange!(" fake-token-not-a-secret ");
 		await row("Names and terms note").controls[0].onChange!("  ");
 		expect(settings).toMatchObject({
 			geminiKey: "fake-gemini-key-not-a-secret",
 			geminiModel: "gemini-3.5-transcribe",
-			server: "https://loam.example.net",
-			token: "fake-token-not-a-secret",
 			termsPath: "Dictation terms.md",
 		});
 	});

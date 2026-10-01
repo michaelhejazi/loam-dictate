@@ -1,6 +1,5 @@
 // What the phone does so a walker knows where the take is without looking:
-// one haptic language, three moments, and no others. Loam UI's app uses the
-// same three patterns; this table is the one to check it against.
+// one haptic language, three moments, and no others.
 
 export type Moment = "started" | "warning" | "cap";
 

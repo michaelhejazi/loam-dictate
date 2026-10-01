@@ -39,7 +39,7 @@ export class DictateModal extends Modal {
 	}
 
 	onOpen(): void {
-		this.modalEl.addClass("loam-dictate-modal");
+		this.modalEl.addClass("spoken-modal");
 		this.session.onChange((p) => this.render(p));
 		this.render(this.session.phase);
 		void this.session.record();
@@ -76,11 +76,11 @@ export class DictateModal extends Modal {
 
 		const el = this.contentEl;
 		el.empty();
-		el.addClass("loam-dictate");
+		el.addClass("spoken");
 		switch (p.kind) {
 			case "unsupported":
 				this.head(el, "quiet", "Can't record");
-				el.createDiv({ cls: "loam-dictate-err", text: p.message });
+				el.createDiv({ cls: "spoken-err", text: p.message });
 				this.actions(el, [["Close", "quiet", () => this.close()]]);
 				break;
 			case "starting":
@@ -112,11 +112,11 @@ export class DictateModal extends Modal {
 				break;
 			case "ready": {
 				this.head(el, "quiet", "Ready");
-				el.createDiv({ cls: "loam-dictate-text", text: p.text });
-				const meta = el.createDiv({ cls: "loam-dictate-meta" });
+				el.createDiv({ cls: "spoken-text", text: p.text });
+				const meta = el.createDiv({ cls: "spoken-meta" });
 				meta.createSpan({ text: `${words(p.text)} ${plural(words(p.text), "word")} · ${fmt(p.durationMs)}` });
 				if (!p.targetGone) {
-					const retake = meta.createEl("a", { cls: "loam-dictate-link", text: "Retake", href: "#" });
+					const retake = meta.createEl("a", { cls: "spoken-link", text: "Retake", href: "#" });
 					retake.addEventListener("click", (ev) => {
 						ev.preventDefault();
 						void this.session.retake();
@@ -126,7 +126,7 @@ export class DictateModal extends Modal {
 						["Insert", "primary", () => this.insert(p.text)],
 					]);
 				} else {
-					el.createDiv({ cls: "loam-dictate-err", text: `${this.target.file.basename} is no longer open for editing, so the words weren't inserted anywhere else. Copy them, or discard them.` });
+					el.createDiv({ cls: "spoken-err", text: `${this.target.file.basename} is no longer open for editing, so the words weren't inserted anywhere else. Copy them, or discard them.` });
 					this.actions(el, [
 						["Discard", "quiet", () => this.close()],
 						["Copy", "primary", () => void this.copy(p.text)],
@@ -137,7 +137,7 @@ export class DictateModal extends Modal {
 			case "failed": {
 				this.head(el, "quiet", "Not cleaned");
 				this.clock(el, fmt(p.durationMs), null, false).addClass("is-faint");
-				const err = el.createDiv({ cls: "loam-dictate-err", text: p.message });
+				const err = el.createDiv({ cls: "spoken-err", text: p.message });
 				err.createEl("small", {
 					text: p.takeKept ? "Try again when you have signal, or discard it." : "Try again to record, or close.",
 				});
@@ -151,31 +151,31 @@ export class DictateModal extends Modal {
 	}
 
 	private head(el: HTMLElement, dot: string, label: string, spinning = false): void {
-		const head = el.createDiv({ cls: "loam-dictate-head" });
-		const state = head.createDiv({ cls: "loam-dictate-state" });
-		if (spinning) state.createSpan({ cls: "loam-dictate-spin" });
-		else state.createSpan({ cls: ["loam-dictate-dot", ...(dot ? [`is-${dot}`] : [])] });
+		const head = el.createDiv({ cls: "spoken-head" });
+		const state = head.createDiv({ cls: "spoken-state" });
+		if (spinning) state.createSpan({ cls: "spoken-spin" });
+		else state.createSpan({ cls: ["spoken-dot", ...(dot ? [`is-${dot}`] : [])] });
 		state.createSpan({ text: label });
 		// Room for Obsidian's close button, which sits over this end of the row (styles.css).
-		const into = head.createDiv({ cls: ["loam-dictate-into", "loam-dictate-beside-close"], text: "into " });
+		const into = head.createDiv({ cls: ["spoken-into", "spoken-beside-close"], text: "into " });
 		into.createEl("b", { text: this.target.file.basename });
 	}
 
 	private clock(el: HTMLElement, now: string, cap: string | null, amber: boolean): HTMLElement {
-		const clock = el.createDiv({ cls: ["loam-dictate-clock", ...(amber ? ["is-amber"] : [])] });
-		this.clockEl = clock.createSpan({ cls: "loam-dictate-big", text: now });
-		if (cap) clock.createSpan({ cls: "loam-dictate-cap", text: `/ ${cap}` });
+		const clock = el.createDiv({ cls: ["spoken-clock", ...(amber ? ["is-amber"] : [])] });
+		this.clockEl = clock.createSpan({ cls: "spoken-big", text: now });
+		if (cap) clock.createSpan({ cls: "spoken-cap", text: `/ ${cap}` });
 		return clock;
 	}
 
 	private hint(el: HTMLElement, text: string, amber: boolean): void {
-		this.hintEl = el.createDiv({ cls: ["loam-dictate-hint", ...(amber ? ["is-amber"] : [])], text });
+		this.hintEl = el.createDiv({ cls: ["spoken-hint", ...(amber ? ["is-amber"] : [])], text });
 	}
 
 	private actions(el: HTMLElement, buttons: Array<[string, string, () => void]>): void {
-		const row = el.createDiv({ cls: "loam-dictate-actions" });
+		const row = el.createDiv({ cls: "spoken-actions" });
 		for (const [text, kind, fn] of buttons) {
-			const cls = ["loam-dictate-btn", ...kind.split(" ").map((k) => `is-${k}`)];
+			const cls = ["spoken-btn", ...kind.split(" ").map((k) => `is-${k}`)];
 			if (kind.includes("primary")) cls.push("mod-cta");
 			const b = row.createEl("button", { text, cls });
 			b.addEventListener("click", fn);
@@ -200,7 +200,7 @@ export class DictateModal extends Modal {
 	// The wave: a canvas of recent loudness, so nothing is styled inline.
 
 	private wave(el: HTMLElement, frozen: boolean): void {
-		this.canvas = el.createEl("canvas", { cls: ["loam-dictate-wave", ...(frozen ? ["is-frozen"] : [])] });
+		this.canvas = el.createEl("canvas", { cls: ["spoken-wave", ...(frozen ? ["is-frozen"] : [])] });
 	}
 
 	private startWave(): void {
@@ -265,10 +265,10 @@ export class DictateModal extends Modal {
 	private async copy(text: string): Promise<void> {
 		try {
 			await navigator.clipboard.writeText(text);
-			new Notice("Loam Dictate: copied the words.");
+			new Notice("Spoken: copied the words.");
 			this.close();
 		} catch {
-			new Notice("Loam Dictate: couldn't copy. Select the text in the sheet and copy it by hand.");
+			new Notice("Spoken: couldn't copy. Select the text in the sheet and copy it by hand.");
 		}
 	}
 }
