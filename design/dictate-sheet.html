@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Spoken — the sheet, six states</title>
+<title>Spoken — the sheet, seven states</title>
 <style>
   /* ------------------------------------------------------------------
      Obsidian's own variables, with the default theme's values so this
@@ -136,7 +136,9 @@
     padding: 12px 14px; font-family: var(--font-text); font-size: 14px; line-height: 1.55; max-height: 190px; overflow: hidden; position: relative; margin: 12px 0 8px; }
   .textcard:after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 34px;
     background: linear-gradient(to bottom, transparent, var(--background-secondary)); }
-  .meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-faint); margin: 0 2px 14px; }
+  .meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 12px; color: var(--text-faint); margin: 0 2px 14px; }
+  .links { display: flex; gap: 12px; }
+  .polish-note { font-size: 12px; color: var(--text-muted); margin: -8px 2px 14px; }
   .link { color: var(--text-muted); text-decoration: underline; text-underline-offset: 2px; }
 
   .spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--background-modifier-border); border-top-color: var(--interactive-accent); display: inline-block; vertical-align: -3px; margin-right: 8px; }
@@ -147,7 +149,7 @@
 </head>
 <body class="dark-preview">
 <button class="toggle" onclick="flip()">Light theme</button>
-<h1>Spoken — the sheet, six states</h1>
+<h1>Spoken — the sheet, seven states</h1>
 <p class="sub">Pixel width, Obsidian's own variables. <b>The mic is a command on the mobile toolbar</b>, first position. Pressing it opens Obsidian's modal, which is a bottom sheet on a phone. The sheet never covers the note's name: every state says where the words will land. <b>Words land only on Insert</b>; leaving the note or closing the sheet throws the take away, same rule as the app.</p>
 
 <div class="row" id="row"></div>
@@ -224,13 +226,20 @@ const states = [
       <div class="hint">Record and clean · biased with 12 terms</div>
       <div class="actions"><span class="btn quiet">Cancel</span></div>`) },
 
-  { cap: '<b>5 · Ready.</b> The cleaned words, readable before they touch the note. Insert puts them at the cursor as one undo step. Discard is quiet, Retake is a link. This card is where a second verb (edit the note by voice) will live later; nothing here has to move for it.',
+  { cap: '<b>5 · Polishing.</b> The transcript is back; a fast text model reads it with the whole terms list and fixes names and grammar (src/polish.ts). Same calm as cleaning: the wave stays frozen, the hint says the level. Skip shows the transcript as heard at once; Cancel throws the take away. A failure here is never a failed take.',
+    body: note('') + sheet(head('quiet', '<span class="spin"></span>Polishing…') + `
+      <div class="clock"><span class="big" style="color:var(--text-faint)">0:42</span></div>
+      ${wave(0, true)}
+      <div class="hint">Light polish · names from the terms note</div>
+      <div class="actions"><span class="btn quiet">Cancel</span><span class="btn quiet">Skip</span></div>`) },
+
+  { cap: '<b>6 · Ready.</b> The polished words, readable before they touch the note. Insert puts them at the cursor as one undo step. The meta line says the level that ran and offers the others for this take: each re-polishes the kept transcript, without recording or transcribing again. If Polish did not run, the meta says <i>Not polished</i> and one quiet line under it says why; the words are the transcript as heard. Discard is quiet, Retake is a link.',
     body: note('') + sheet(head('quiet', 'Ready') + `
-      <div class="textcard">Walked the ridge loop before the call with Simin. What I keep coming back to is the one-customer question. Flyo has about ten practices paying; if I take the trial to year end at five to ten hours a week, the thing to decide first is which single practice we design for, not the equity.</div>
-      <div class="meta"><span>58 words · 0:42</span><span class="link">Retake</span></div>
+      <div class="textcard">Walked the ridge loop before the call with Simin. What I keep coming back to is the one-customer question. Flio has about ten practices paying; if I take the trial to year end at five to ten hours a week, the thing to decide first is which single practice we design for, not the equity.</div>
+      <div class="meta"><span>58 words · 0:42 · Light polish</span><span class="links"><span class="link">Off</span><span class="link">Full</span><span class="link">Retake</span></span></div>
       <div class="actions"><span class="btn quiet">Discard</span><span class="btn primary">Insert</span></div>`) },
 
-  { cap: '<b>6 · Google didn\'t answer.</b> The audio is kept in the sheet, so a dropped connection on a trail costs a retry, not the take. A sentence is shown, not a code.',
+  { cap: '<b>7 · Google didn\'t answer.</b> The audio is kept in the sheet, so a dropped connection on a trail costs a retry, not the take. A sentence is shown, not a code.',
     body: note('') + sheet(head('quiet', 'Not cleaned') + `
       <div class="clock"><span class="big" style="color:var(--text-faint)">0:42</span></div>
       <div class="err">Google couldn't be reached. The recording is still here.<small>Try again when you have signal, or discard it.</small></div>

@@ -1,15 +1,15 @@
 import { Editor, MarkdownFileInfo, Notice, Platform, Plugin, TFile, apiVersion, normalizePath, requestUrl } from "obsidian";
 import { issueUrl, platformName } from "./feedback";
 import { HttpClient } from "./http";
-import { KeyCheck, checkGeminiKey } from "./keycheck";
+import { CHECK_WAIT_MS, KeyCheck, MODELS_ENDPOINT, checkGeminiKey } from "./keycheck";
 import { DictateModal } from "./modal";
-import { PROVIDERS, makeTranscriber } from "./provider";
+import { PROVIDERS, makePolisher, makeTranscriber } from "./provider";
 import { mediaRecorderFactory } from "./recorder";
 import { realClock } from "./session";
 import { Signals, browserSignalEnv } from "./signals";
 import { DEFAULT_SETTINGS, SpokenSettingTab, SpokenSettings, clampMinutes, upgradeSettings } from "./settings";
 import { NoteStore, ensureTermsNote, moveOldTerms, readTermsNote, termsPath } from "./termsnote";
-import { buildTerms } from "./vocabulary";
+import { allTerms, buildTerms } from "./vocabulary";
 import { ScreenWake, browserWakeEnv } from "./wakelock";
 
 export default class SpokenPlugin extends Plugin {
@@ -70,6 +70,9 @@ export default class SpokenPlugin extends Plugin {
 				recorders: mediaRecorderFactory(),
 				transcriber: makeTranscriber(() => this.settings, http),
 				terms,
+				polisher: makePolisher(() => this.settings, http),
+				polishLevel: () => this.settings.polish,
+				polishTerms: () => this.polishTermsFor(file),
 				capMs: clampMinutes(this.settings.maxMinutes) * 60_000,
 				clock: realClock,
 				signal: (m) => this.signals.signal(m),
@@ -87,7 +90,7 @@ export default class SpokenPlugin extends Plugin {
 
 	/** Settings → Check key: one request for the configured model's record, under the key. */
 	checkGeminiKey(): Promise<KeyCheck> {
-		return checkGeminiKey(this.settings.geminiKey, this.settings.geminiModel, this.http);
+		return checkGeminiKey(this.settings.geminiKey, this.settings.geminiModel, this.http, CHECK_WAIT_MS, MODELS_ENDPOINT, this.settings.polishModel);
 	}
 
 	/** Settings → Report a problem: a new issue with the four facts filled in, and nothing else. */
@@ -104,6 +107,12 @@ export default class SpokenPlugin extends Plugin {
 	private async termsFor(file: TFile): Promise<string[]> {
 		const headings = this.app.metadataCache.getFileCache(file)?.headings?.map((h) => h.heading) ?? [];
 		return buildTerms(await readTermsNote(this.notes, this.termsPath()), file.basename, headings);
+	}
+
+	/** Every name and term for Polish, uncapped, read fresh like the take's. */
+	private async polishTermsFor(file: TFile): Promise<string[]> {
+		const headings = this.app.metadataCache.getFileCache(file)?.headings?.map((h) => h.heading) ?? [];
+		return allTerms(await readTermsNote(this.notes, this.termsPath()), file.basename, headings);
 	}
 
 	private termsPath(): string {

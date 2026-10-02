@@ -133,7 +133,7 @@ clipboard.
 | Use `this.app`, not the global `app` | Pass |
 | Only private API: none | Pass: `app.setting.close` removed in 0.3.0 |
 | No unnecessary console logging | Pass: no `console` calls at all |
-| Folders for several `.ts` files (should) | Not followed: sixteen small files in one `src/`, each named for what it does; a folder per two files would hide more than it shows |
+| Folders for several `.ts` files (should) | Not followed: seventeen small files in one `src/`, each named for what it does; a folder per two files would hide more than it shows |
 | No settings-tab heading at the top, none with "settings", sentence case | Pass, except the warnings above |
 | `setHeading` instead of HTML headings | Pass: no headings |
 | No `innerHTML`, `outerHTML`, `insertAdjacentHTML` | Pass |

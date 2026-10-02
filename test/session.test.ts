@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PolishError, PolishLevel, Polisher, WHY_SKIPPED } from "../src/polish";
 import { mediaRecorderFactory } from "../src/recorder";
 import { CANNOT_RECORD, Clock, DictationSession, Phase, TICK_MS } from "../src/session";
 import { HAPTICS, Signals } from "../src/signals";
@@ -67,7 +68,14 @@ function fakeSignals(vibrate: "works" | "missing" | "refuses" = "works") {
 }
 
 function setup(
-	opts: { mediaRecorder?: boolean; vibrate?: "works" | "missing" | "refuses"; terms?: () => string[] | Promise<string[]> } = {},
+	opts: {
+		mediaRecorder?: boolean;
+		vibrate?: "works" | "missing" | "refuses";
+		terms?: () => string[] | Promise<string[]>;
+		/** Off unless a test is about Polish, so the paths before it read as they always have. */
+		polish?: PolishLevel;
+		polisher?: Polisher;
+	} = {},
 ) {
 	const mic = fakeMic(opts);
 	const time = fakeClock();
@@ -78,6 +86,9 @@ function setup(
 		recorders: mediaRecorderFactory(() => mic.env),
 		transcriber: tx.t,
 		terms: opts.terms ?? (() => ["Simin", "Flyo"]),
+		polisher: opts.polisher ?? { polish: () => Promise.reject(new Error("Polish is off in this test")) },
+		polishLevel: () => opts.polish ?? "off",
+		polishTerms: () => ["Simin", "Flyo", "Flio"],
 		capMs: CAP,
 		clock: time.clock,
 		signal: (m) => sig.signals.signal(m),
@@ -109,7 +120,14 @@ describe("the sheet's session, through every way out", () => {
 
 		s.tx.calls[0].resolve({ text: "Walked the ridge.", biased: true });
 		await stopping;
-		expect(s.session.phase).toEqual({ kind: "ready", text: "Walked the ridge.", biased: true, durationMs: 22_000, targetGone: false });
+		expect(s.session.phase).toEqual({
+			kind: "ready",
+			text: "Walked the ridge.",
+			biased: true,
+			durationMs: 22_000,
+			targetGone: false,
+			polish: { text: "Walked the ridge.", level: "off", ran: true },
+		});
 
 		s.session.close(); // Insert closes the sheet once the words are in.
 		expect(s.session.phase.kind).toBe("closed");
@@ -489,3 +507,101 @@ describe("one haptic language: three moments and no others", () => {
 		s.session.close();
 	});
 });
+
+/** A polisher whose answers the test hands out. */
+function fakePolisher() {
+	const calls: Array<{ text: string; level: string; terms: string[]; resolve: (t: string) => void; reject: (e: unknown) => void }> = [];
+	const p: Polisher = {
+		polish: (text, level, terms) => new Promise<string>((resolve, reject) => calls.push({ text, level, terms, resolve, reject })),
+	};
+	return { p, calls };
+}
+
+describe("Polish, between cleaning and ready", () => {
+	async function toPolishing(level: PolishLevel = "light") {
+		const pol = fakePolisher();
+		const s = setup({ polish: level, polisher: pol.p });
+		await s.session.record();
+		s.time.advance(10_000);
+		const stopping = s.session.stop();
+		await flush();
+		s.tx.calls[0].resolve({ text: "tell fleo hello", biased: true });
+		await flush();
+		return { ...s, pol, stopping };
+	}
+
+	it("Stop → cleaning → polishing → ready, with the whole terms list and the level that ran", async () => {
+		const s = await toPolishing("light");
+		expect(s.session.phase).toEqual({ kind: "polishing", durationMs: 10_000, level: "light" });
+		expect(s.pol.calls).toHaveLength(1);
+		expect(s.pol.calls[0]).toMatchObject({ text: "tell fleo hello", level: "light", terms: ["Simin", "Flyo", "Flio"] });
+		s.pol.calls[0].resolve("Tell Flio hello.");
+		await s.stopping;
+		expect(s.session.phase).toMatchObject({ kind: "ready", text: "Tell Flio hello.", biased: true, polish: { level: "light", ran: true } });
+		expect(s.phases.filter((k, i) => k !== s.phases[i - 1])).toEqual(["starting", "recording", "cleaning", "polishing", "ready"]);
+	});
+
+	it("a polish error is never a failed take: the transcript is ready, with why", async () => {
+		const s = await toPolishing("full");
+		s.pol.calls[0].reject(new PolishError("Gemini took too long"));
+		await s.stopping;
+		expect(s.session.phase).toMatchObject({
+			kind: "ready",
+			text: "tell fleo hello",
+			polish: { level: "full", ran: false, why: "Gemini took too long" },
+		});
+	});
+
+	it("Skip while polishing shows the transcript at once, and the late answer is ignored", async () => {
+		const s = await toPolishing("light");
+		s.session.skipPolish();
+		expect(s.session.phase).toMatchObject({ kind: "ready", text: "tell fleo hello", polish: { ran: false, why: WHY_SKIPPED } });
+		s.pol.calls[0].resolve("Tell Flio hello.");
+		await s.stopping;
+		expect(s.session.phase).toMatchObject({ kind: "ready", text: "tell fleo hello" });
+	});
+
+	it("another level re-polishes the kept transcript: no re-recording, no re-transcribing", async () => {
+		const s = await toPolishing("light");
+		s.pol.calls[0].resolve("Tell Flio hello.");
+		await s.stopping;
+		const again = s.session.repolish("full");
+		expect(s.session.phase).toEqual({ kind: "polishing", durationMs: 10_000, level: "full" });
+		await flush();
+		expect(s.pol.calls[1]).toMatchObject({ text: "tell fleo hello", level: "full" });
+		s.pol.calls[1].resolve("Tell Flio hello!");
+		await again;
+		expect(s.session.phase).toMatchObject({ kind: "ready", text: "Tell Flio hello!", polish: { level: "full", ran: true } });
+		await s.session.repolish("off");
+		expect(s.session.phase).toMatchObject({ kind: "ready", text: "tell fleo hello", polish: { level: "off", ran: true } });
+		expect(s.tx.calls).toHaveLength(1);
+		expect(s.mic.recorders).toHaveLength(1);
+	});
+
+	it("Off goes straight from cleaning to ready and calls nothing", async () => {
+		const s = await toPolishing("off");
+		await s.stopping;
+		expect(s.pol.calls).toHaveLength(0);
+		expect(s.phases).not.toContain("polishing");
+		expect(s.session.phase).toMatchObject({ kind: "ready", polish: { level: "off", ran: true } });
+	});
+
+	it("the kept transcript goes at Discard: nothing is left to re-polish", async () => {
+		const s = await toPolishing("light");
+		s.pol.calls[0].resolve("Tell Flio hello.");
+		await s.stopping;
+		s.session.close();
+		await s.session.repolish("full");
+		expect(s.pol.calls).toHaveLength(1);
+		expect(s.session.phase.kind).toBe("closed");
+	});
+
+	it("Cancel while polishing closes, and the late answer is ignored", async () => {
+		const s = await toPolishing("light");
+		s.session.close();
+		s.pol.calls[0].resolve("Tell Flio hello.");
+		await s.stopping;
+		expect(s.session.phase.kind).toBe("closed");
+	});
+});
+

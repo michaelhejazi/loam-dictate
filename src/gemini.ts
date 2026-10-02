@@ -106,8 +106,8 @@ export class GeminiTranscriber implements Transcriber {
 	}
 }
 
-/** The text of every model_output step, in order. */
-function outputText(body: Record<string, unknown>): string {
+/** The text of every model_output step, in order. Polish (src/polish.ts) reads its answer the same way. */
+export function outputText(body: Record<string, unknown>): string {
 	type Part = { type?: unknown; text?: unknown; content?: unknown } | null;
 	const steps: Part[] = Array.isArray(body.steps) ? (body.steps as Part[]) : [];
 	let text = "";

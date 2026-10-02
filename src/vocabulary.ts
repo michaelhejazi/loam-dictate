@@ -27,3 +27,21 @@ export function buildTerms(userTerms: string[], title: string | null, headings: 
 	while (out.length && encodeTerms(out).length > MAX_ENCODED_BYTES) out.pop();
 	return out;
 }
+
+/**
+ * The list Polish reads (src/polish.ts): every line of the terms note, then the
+ * title and headings, each once regardless of case. No cap: the hundred
+ * belongs to the transcriber's biasing, and a text model reads them all.
+ */
+export function allTerms(userTerms: string[], title: string | null, headings: string[]): string[] {
+	const seen = new Set<string>();
+	const out: string[] = [];
+	for (const raw of [...userTerms, ...(title ? [title] : []), ...headings]) {
+		const term = raw.trim();
+		const key = term.toLocaleLowerCase();
+		if (!term || seen.has(key)) continue;
+		seen.add(key);
+		out.push(term);
+	}
+	return out;
+}

@@ -2,7 +2,9 @@
 // the plugin uses it (docs/gemini-request.md): it checks the key the way
 // Google does (400 INVALID_ARGUMENT "API key not valid"), checks the body's
 // shape, and answers with a completed interaction whose model_output text
-// describes the audio it was sent. It also serves GET /v1beta/models/{model},
+// describes the audio it was sent. A text interaction (Polish, src/polish.ts)
+// is answered with the transcript it was given, unchanged, for a model it knows,
+// and 404 NOT_FOUND for any other. It also serves GET /v1beta/models/{model},
 // the model record Check key reads: the record for a model it knows, 404
 // NOT_FOUND for any other. The tests start it in-process.
 //
@@ -13,13 +15,22 @@ import { createServer } from "node:http";
 export const FAKE_GEMINI_KEY = "fake-gemini-key-not-a-secret";
 export const PATH = "/v1beta/interactions";
 export const MODELS_PATH = "/v1beta/models";
-export const KNOWN_MODELS = ["gemini-3.5-transcribe"];
+export const KNOWN_MODELS = ["gemini-3.5-transcribe", "gemini-3.5-flash-lite"];
 export const MIME_TYPES = [
 	"audio/wav", "audio/mp3", "audio/aiff", "audio/aac", "audio/ogg", "audio/flac", "audio/mpeg",
 	"audio/m4a", "audio/l16", "audio/opus", "audio/alaw", "audio/mulaw", "audio/webm",
 ];
 
 const googleError = (code, status, message) => ({ error: { code, message, status } });
+
+/** Why a Polish body isn't one the plugin should send, or null when it is. */
+function invalidText(body) {
+	if (typeof body.model !== "string" || !body.model) return "model is required.";
+	if (typeof body.system_instruction !== "string" || !body.system_instruction) return "system_instruction must be a string.";
+	if (!/<transcript>\n[\s\S]*\n<\/transcript>$/.test(body.input)) return "input must end with the fenced transcript.";
+	if (body.store !== false) return "store must be false.";
+	return null;
+}
 
 /** Why the body isn't one the plugin should send, or null when it is. */
 function invalid(body) {
@@ -37,6 +48,17 @@ function invalid(body) {
 		if (v.length > 1000) return "custom_vocabulary has more than 1000 terms.";
 	}
 	return null;
+}
+
+/** A completed interaction whose model output is this text, as Google shapes it. */
+export function completed(model, userSteps, text) {
+	return {
+		id: "v1_fake",
+		object: "interaction",
+		model,
+		status: "completed",
+		steps: [...userSteps, { type: "model_output", content: [{ type: "text", text }] }],
+	};
 }
 
 /**
@@ -84,6 +106,15 @@ export async function startFakeGemini(opts = {}) {
 			}
 			const next = scripted.shift();
 			if (next) return send(next.status, next.body, next.delayMs);
+			if (json && typeof json.input === "string") {
+				const why = invalidText(json);
+				if (why) return send(400, googleError(400, "INVALID_ARGUMENT", why));
+				if (!KNOWN_MODELS.includes(json.model)) {
+					return send(404, googleError(404, "NOT_FOUND", `models/${json.model} is not found for API version v1beta.`));
+				}
+				const transcript = /<transcript>\n([\s\S]*)\n<\/transcript>$/.exec(json.input)[1];
+				return send(200, completed(json.model, [{ type: "user_input", content: [{ type: "text", text: json.input }] }], transcript));
+			}
 			const why = invalid(json);
 			if (why) return send(400, googleError(400, "INVALID_ARGUMENT", why));
 			if (state.rejectVocabulary && json.generation_config.transcription_config.custom_vocabulary) {
@@ -91,16 +122,10 @@ export async function startFakeGemini(opts = {}) {
 			}
 			const audio = json.input[0];
 			const bytes = Buffer.from(audio.data, "base64").length;
-			send(200, {
-				id: "v1_fake",
-				object: "interaction",
-				model: json.model,
-				status: "completed",
-				steps: [
-					{ type: "user_input", content: [{ type: "audio", mime_type: audio.mime_type }] },
-					{ type: "model_output", content: [{ type: "text", text: `Fake transcript of ${bytes} bytes of ${audio.mime_type}.` }] },
-				],
-			});
+			send(
+				200,
+				completed(json.model, [{ type: "user_input", content: [{ type: "audio", mime_type: audio.mime_type }] }], `Fake transcript of ${bytes} bytes of ${audio.mime_type}.`),
+			);
 		});
 	});
 

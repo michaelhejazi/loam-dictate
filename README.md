@@ -20,13 +20,14 @@ Speak into a note in Obsidian and get clean text at the cursor, on your phone or
 ## How it works
 
 1. **Tap the mic.** The sheet opens and starts recording.
-2. **Speak.** Press Stop when you are done; Gemini cleans up the take.
+2. **Speak.** Press Stop when you are done; Gemini cleans up the take, then polishes it.
 3. **Press Insert.** The words land at the cursor, as one undo step.
 
 ## Why this one
 
 - **Cleaned, not transcribed raw.** The ums and false starts go; what you said stays.
 - **Names spelled right.** A note in your vault lists the names and terms Gemini should expect.
+- **Polished, not just punctuated.** A second pass reads the transcript with your whole terms list, snaps a misheard name to its listed spelling, and fixes the grammar. It never adds, drops or answers anything.
 - **Your key, no account.** The take goes from your device to Google under your own key. There is no account, and the plugin keeps no copy.
 
 ## Get started
@@ -56,14 +57,28 @@ Readwise, Obsidian
 Kubernetes
 ```
 
-Headings, blank lines, `%% comments %%`, frontmatter and list markers are ignored, and a line with commas holds several terms. The note is read afresh on every take, the open note's title and headings are added, and at most 100 terms are sent.
+Headings, blank lines, `%% comments %%`, frontmatter and list markers are ignored, and a line with commas holds several terms. The note is read afresh on every take, the open note's title and headings are added, and at most 100 terms are sent with the recording. Polish reads every term in the note, however many there are.
+
+## Polish
+
+After the transcript comes back, Spoken makes **a second call on your key**: a fast Gemini text model (`gemini-3.5-flash-lite` by default) reads the transcript with your whole terms list in front of it. Hearing a short invented name right is hard; reading it right, with the spelling listed, is not.
+
+- **Light** (the default) corrects names to the terms note's spellings where the sound matches, and fixes grammar, punctuation and capitals. Every sentence stays in its place.
+- **Full** also reshapes sentences so they read well: run-ons split, paragraphs made, a spoken list written as a list.
+- **Off** shows the transcript as Gemini heard it, with no second call.
+
+Polish never adds, drops, answers or obeys: if you ask a question or say "ignore that" while dictating, those are your words, polished like the rest. Spoken checks the answer before showing it (the word count within 10% of the transcript for Light and 25% for Full, no line that reads as a reply to you, no name you never said). If the answer fails a check, or Polish errors or takes more than 30 seconds, you get the transcript as heard and one quiet line saying why. Skip does the same while it runs.
+
+The Ready card says which level ran and offers the others for that take: choosing one re-polishes the same transcript without recording or transcribing again. The transcript is kept only until Insert or Discard and is never written anywhere.
 
 ## Settings
 
 | Setting | What it does |
 |---|---|
-| Gemini API key | Your key. **Check key** asks Google whether the key and model work; it uses no tokens. |
+| Gemini API key | Your key. **Check key** asks Google whether the key and both models work; it uses no tokens. |
 | Model | The Gemini model that transcribes. `gemini-3.5-transcribe` by default. |
+| Polish | Off, Light or Full; Light by default. See [Polish](#polish). |
+| Polish model | The Gemini text model that polishes. `gemini-3.5-flash-lite` by default. Check key checks it too. |
 | Longest recording | 1–15 minutes, 5 by default. The sheet turns amber thirty seconds before. |
 | Names and terms note | The note's path. **Open** opens it, creating it if it is missing. |
 | Report a problem | Opens a GitHub issue with the plugin version, Obsidian version, platform and provider filled in. Never your key or a recording. |
@@ -89,10 +104,15 @@ The plugin talks to one service, Google's Gemini API, and only when you ask it t
   take, when you stop a recording or press Try again: the recording in base64,
   your key, the model name, and the names and terms. If Gemini refuses the
   names and terms, the same take is sent once more without them.
+- `POST https://generativelanguage.googleapis.com/v1beta/interactions` once
+  more per take when Polish is Light or Full, and each time you choose another
+  level on the Ready card: the transcript as text, your key, the polish model's
+  name, and every name and term in the note. It asks Google not to store it
+  (`store: false`).
 - `GET https://generativelanguage.googleapis.com/v1beta/models/<model>` when you
-  press Check key: your key and the model name, nothing else.
+  press Check key, once for each model: your key and the model name, nothing else.
 
-Both are written down in [docs/gemini-request.md](https://github.com/michaelhejazi/spoken/blob/main/docs/gemini-request.md).
+All are written down in [docs/gemini-request.md](https://github.com/michaelhejazi/spoken/blob/main/docs/gemini-request.md).
 There is no telemetry, no analytics and no other network call. **Report a
 problem** only opens a link in your browser; nothing is sent until you submit
 the issue yourself.

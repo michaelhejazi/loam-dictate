@@ -1,5 +1,6 @@
 import { App, PluginSettingTab, Setting, SettingDefinitionItem } from "obsidian";
 import { DEFAULT_MODEL } from "./gemini";
+import { DEFAULT_POLISH_MODEL, POLISH_LEVELS, PolishLevel } from "./polish";
 import type SpokenPlugin from "./main";
 import { PROVIDERS, Provider, ProviderSettings, visibleProviders } from "./provider";
 import type { SignalPath } from "./signals";
@@ -10,6 +11,10 @@ export interface SpokenSettings extends ProviderSettings {
 	maxMinutes: number;
 	/** The vault path of the names-and-terms note. */
 	termsPath: string;
+	/** The second pass over the transcript (src/polish.ts). */
+	polish: PolishLevel;
+	/** The Gemini text model that polishes. */
+	polishModel: string;
 	/**
 	 * 0.1.x's in-settings list, one per line. Never read for a take: moved into
 	 * the terms note once, or kept here until the user chooses (src/termsnote.ts).
@@ -23,6 +28,8 @@ export const DEFAULT_SETTINGS: SpokenSettings = {
 	geminiModel: DEFAULT_MODEL,
 	maxMinutes: 5,
 	termsPath: DEFAULT_TERMS_PATH,
+	polish: "light",
+	polishModel: DEFAULT_POLISH_MODEL,
 };
 
 export const MIN_MINUTES = 1;
@@ -46,13 +53,17 @@ export function upgradeSettings(data: unknown): { settings: SpokenSettings; chan
 		settings.provider = "gemini";
 		changed = true;
 	}
+	if (!(settings.polish in POLISH_LEVELS)) {
+		settings.polish = DEFAULT_SETTINGS.polish;
+		changed = true;
+	}
 	settings.maxMinutes = clampMinutes(settings.maxMinutes);
 	return { settings, changed };
 }
 
 /** The settings each provider shows, by name; the tab draws exactly these. */
 export const PROVIDER_FIELDS: Record<Provider, string[]> = {
-	gemini: ["Gemini API key", "Model"],
+	gemini: ["Gemini API key", "Model", "Polish", "Polish model"],
 };
 
 /** What each saved field becomes when typed into, before it is saved. */
@@ -61,6 +72,7 @@ const NORMALISE: Partial<Record<keyof SpokenSettings, (v: unknown) => unknown>> 
 	geminiModel: (v) => String(v).trim() || DEFAULT_MODEL,
 	maxMinutes: clampMinutes,
 	termsPath: (v) => String(v).trim() || DEFAULT_TERMS_PATH,
+	polishModel: (v) => String(v).trim() || DEFAULT_POLISH_MODEL,
 };
 
 /**
@@ -113,6 +125,19 @@ export class SpokenSettingTab extends PluginSettingTab {
 				desc: `The Gemini model that transcribes. ${DEFAULT_MODEL} is Google's speech-to-text model; change this only when Google names a newer one.`,
 				visible: on("gemini"),
 				control: { type: "text", key: "geminiModel", placeholder: DEFAULT_MODEL },
+			},
+			{
+				name: PROVIDER_FIELDS.gemini[2],
+				desc: POLISH_DESC,
+				aliases: ["Grammar", "Spelling", "Second pass"],
+				visible: on("gemini"),
+				control: { type: "dropdown", key: "polish", options: { ...POLISH_LEVELS } },
+			},
+			{
+				name: PROVIDER_FIELDS.gemini[3],
+				desc: `The Gemini text model that polishes. ${DEFAULT_POLISH_MODEL} is Google's fastest text model; change this only when Google names a newer one. Check key checks it too.`,
+				visible: on("gemini"),
+				control: { type: "text", key: "polishModel", placeholder: DEFAULT_POLISH_MODEL },
 			},
 			{
 				name: "Dictate from the phone's toolbar",
@@ -226,6 +251,8 @@ export class SpokenSettingTab extends PluginSettingTab {
 
 const GEMINI_KEY_DESC =
 	"Recordings go from this device to Google under your key and nowhere else. The key is stored in plain text in this plugin's settings file inside the vault.";
+const POLISH_DESC =
+	"A second call on your key after the transcript comes back. Light corrects names to the terms note's spellings and fixes grammar, punctuation and casing, keeping every sentence in place. Full also reshapes sentences, makes paragraphs and turns a spoken list into a list. Nothing is ever added, dropped or answered; if the result doesn't hold up, the transcript is shown as heard.";
 const TERMS_NOTE_DESC =
 	"A note in this vault of names and terms you want spelled right, one per line. It is read on every take, with the open note's title and headings added.";
 const OLD_TERMS_NAME = "Names and terms from before 0.2";

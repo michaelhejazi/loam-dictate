@@ -17,4 +17,5 @@ export interface FakeGemini {
 	respondNext(status: number, body: unknown, delayMs?: number): void;
 	close(): Promise<void>;
 }
+export declare function completed(model: string, userSteps: unknown[], text: string): object;
 export declare function startFakeGemini(opts?: { key?: string; port?: number; host?: string }): Promise<FakeGemini>;

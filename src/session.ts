@@ -3,6 +3,7 @@
 // buttons here; nothing in this file touches the DOM or Obsidian, so every
 // path through it is tested without a device.
 
+import { PolishLevel, Polished, Polisher, WHY_SKIPPED, polishTranscript } from "./polish";
 import { Recorder, RecorderCancelled, RecorderFactory, Recording, microphoneError } from "./recorder";
 import type { Moment } from "./signals";
 import { Transcriber, TranscribeError } from "./transcriber";
@@ -17,7 +18,10 @@ export type Phase =
 	| { kind: "recording"; elapsedMs: number; warning: boolean }
 	/** `terms` is how many names and terms go with this take: null until the note has been read. */
 	| { kind: "cleaning"; durationMs: number; terms: number | null }
-	| { kind: "ready"; text: string; biased: boolean; durationMs: number; targetGone: boolean }
+	/** The transcript is back; Polish is reading it at this level. */
+	| { kind: "polishing"; durationMs: number; level: Exclude<PolishLevel, "off"> }
+	/** `polish` says which level ran, or that it didn't and why; the text is then the transcript as heard. */
+	| { kind: "ready"; text: string; biased: boolean; durationMs: number; targetGone: boolean; polish: Polished }
 	/** Not cleaned. With the take kept, Try again resends it; without one, it records afresh. */
 	| { kind: "failed"; message: string; durationMs: number; takeKept: boolean }
 	| { kind: "closed" };
@@ -40,6 +44,11 @@ export interface SessionDeps {
 	transcriber: Transcriber;
 	/** Read when a take is sent, so the list reflects the note as it is then. */
 	terms: () => string[] | Promise<string[]>;
+	/** Polish: the second call, at the level the settings say when the take comes back. */
+	polisher: Polisher;
+	polishLevel: () => PolishLevel;
+	/** Every name and term, uncapped, read when Polish runs. */
+	polishTerms: () => string[] | Promise<string[]>;
 	capMs: number;
 	clock: Clock;
 	/** The three moments a walker feels: started, thirty seconds left, stopped at the cap (src/signals.ts). */
@@ -55,6 +64,8 @@ export class DictationSession {
 	private startedAt = 0;
 	private warned = false;
 	private take: Recording | null = null;
+	/** The transcript as heard: kept for re-polishing until Insert or Discard, never written anywhere. */
+	private raw: { text: string; biased: boolean } | null = null;
 	private durationMs = 0;
 	/** Bumped on every way out of a phase, so late answers from an old one are ignored. */
 	private generation = 0;
@@ -80,6 +91,7 @@ export class DictationSession {
 		if (this._phase.kind === "closed") return;
 		this.letGo();
 		this.take = null;
+		this.raw = null;
 		this.durationMs = 0;
 		this.warned = false;
 		const gen = ++this.generation;
@@ -154,6 +166,21 @@ export class DictationSession {
 		return this.record();
 	}
 
+	/** Polish this take again at another level, from the kept transcript: no re-recording, no re-transcribing. */
+	async repolish(level: PolishLevel): Promise<void> {
+		if (this._phase.kind !== "ready" || this._phase.targetGone || !this.raw) return;
+		const gen = ++this.generation;
+		await this.polish(gen, level);
+	}
+
+	/** Skip, while polishing: show the transcript as heard. */
+	skipPolish(): void {
+		if (this._phase.kind !== "polishing" || !this.raw) return;
+		const level = this._phase.level;
+		this.generation++;
+		this.ready({ text: this.raw.text, level, ran: false, why: WHY_SKIPPED });
+	}
+
 	/** Insert was pressed but the editor is no longer there: keep the words, offer Copy. */
 	targetGone(): void {
 		if (this._phase.kind === "ready") this.set({ ...this._phase, targetGone: true });
@@ -165,6 +192,7 @@ export class DictationSession {
 		this.generation++;
 		this.letGo();
 		this.take = null;
+		this.raw = null;
 		this.set({ kind: "closed" });
 		this.listeners = [];
 	}
@@ -179,12 +207,40 @@ export class DictationSession {
 			this.set({ kind: "cleaning", durationMs: this.durationMs, terms: terms.length });
 			const result = await this.deps.transcriber.transcribe(take.audio, take.mimeType, terms);
 			if (gen !== this.generation) return;
-			this.set({ kind: "ready", text: result.text, biased: result.biased, durationMs: this.durationMs, targetGone: false });
+			this.raw = { text: result.text, biased: result.biased };
 		} catch (e) {
 			if (gen !== this.generation) return;
 			const message = e instanceof TranscribeError ? e.message : "The recording couldn't be cleaned.";
 			this.set({ kind: "failed", message, durationMs: this.durationMs, takeKept: true });
+			return;
 		}
+		await this.polish(gen, this.deps.polishLevel());
+	}
+
+	/** Polishes the kept transcript and shows the result. Polish never fails the take: at worst it shows the transcript. */
+	private async polish(gen: number, level: PolishLevel): Promise<void> {
+		const raw = this.raw;
+		if (!raw) return;
+		if (level === "off") {
+			this.ready({ text: raw.text, level, ran: true });
+			return;
+		}
+		this.set({ kind: "polishing", durationMs: this.durationMs, level });
+		let terms: string[] = [];
+		try {
+			terms = await this.deps.polishTerms();
+		} catch {
+			// Polish without the list rather than not at all.
+		}
+		if (gen !== this.generation) return;
+		const result = await polishTranscript(this.deps.polisher, raw.text, level, terms);
+		if (gen !== this.generation) return;
+		this.ready(result);
+	}
+
+	private ready(polish: Polished): void {
+		if (!this.raw) return;
+		this.set({ kind: "ready", text: polish.text, biased: this.raw.biased, durationMs: this.durationMs, targetGone: false, polish });
 	}
 
 	private tick(): void {

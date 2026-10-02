@@ -76,6 +76,9 @@ from there. Change them there and nowhere else:
 - **The names and terms**: what counts as a term in the note is
   `src/termsnote.ts`; how many are sent, and how long each may be, is
   `src/vocabulary.ts`.
+- **The Polish prompt**: `polishPrompt()` in `src/polish.ts`, built from
+  three constants beside it, with the guard's thresholds (`WORD_DRIFT`) and
+  the default polish model.
 - **The steps to a Gemini key**: `KEY_STEPS` and `KEY_PRICING` in
   `src/settings.ts`. The README repeats them, and a test fails if the two
   differ.
@@ -92,12 +95,13 @@ Please keep it that way.
 | `src/transcriber.ts` | `Transcriber.transcribe(audio, mimeType, terms) → {text, biased}`, the only thing the sheet knows about transcribing. |
 | `src/provider.ts` | The provider setting, the providers there are, and `makeTranscriber()`, the one place a transcriber is constructed. |
 | `src/gemini.ts` | `GeminiTranscriber`: the take to Gemini's Interactions API under the user's key. |
-| `src/keycheck.ts` | Check key: one GET for the model's record, and what the answer means. |
+| `src/polish.ts` | Polish: the second call, a fast text model reading the transcript with every term, the prompt, and the guard that decides whether its answer is shown or the transcript is. |
+| `src/keycheck.ts` | Check key: one GET for each model's record (transcribing, then polishing), and what the answer means. |
 | `src/http.ts` | What the requests share: Obsidian's `requestUrl` (so no browser CORS applies) and the wait. |
 | `src/feedback.ts` | The Report a problem link and its four facts. |
 | `src/settings.ts` | The settings, their upgrade from 0.1, the settings tab and the key steps. |
 | `src/termsnote.ts` | The terms note: parsing it, creating it, moving 0.1's list into it. |
-| `src/session.ts` | The sheet's state machine: starting, recording, cleaning, ready, not cleaned, unsupported, closed. It uses no DOM and no Obsidian, so it can be tested on its own. |
+| `src/session.ts` | The sheet's state machine: starting, recording, cleaning, polishing, ready, not cleaned, unsupported, closed. It keeps the transcript as heard until Insert or Discard, so another polish level re-polishes it. It uses no DOM and no Obsidian, so it can be tested on its own. |
 | `src/recorder.ts` | `MediaRecorder` over `getUserMedia`. It asks for Opus in WebM at 32 kbit/s where the platform offers it, and the recording's real MIME type is what gets sent. |
 | `src/signals.ts` | The three haptic patterns by name (`HAPTICS`), and the soft-tone fallback where vibration isn't felt. |
 | `src/wakelock.ts` | `ScreenWake`: keeps the screen on while the session is recording, asking again whenever the page is shown. |

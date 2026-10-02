@@ -6,6 +6,8 @@ import {
 	CHECK_UNREACHABLE,
 	checkGeminiKey,
 	checkUnknownModel,
+	checkBothWork,
+	checkUnknownPolishModel,
 	checkWorks,
 	keyCheckRequest,
 } from "../src/keycheck";
@@ -81,5 +83,31 @@ describe("Check key", () => {
 		expect((await check(fake.key, "")).outcome).toBe("works");
 		fake.respondNext(429, { error: { code: 429, status: "RESOURCE_EXHAUSTED", message: "Quota exceeded." } });
 		expect(await check(fake.key)).toEqual({ outcome: "other", sentence: "Google answered: Quota exceeded." });
+	});
+});
+
+describe("Check key, with the polish model", () => {
+	const both = (key: string, model: string, polishModel: string) => checkGeminiKey(key, model, fetchClient, 2_000, base, polishModel);
+
+	it("checks both models in the one press, and says both exist", async () => {
+		const before = fake.requests.length;
+		expect(await both(fake.key, "gemini-3.5-transcribe", "gemini-3.5-flash-lite")).toEqual({
+			outcome: "works",
+			sentence: checkBothWork("gemini-3.5-transcribe", "gemini-3.5-flash-lite"),
+		});
+		expect(fake.requests.slice(before).map((r) => r.url)).toEqual(["/v1beta/models/gemini-3.5-transcribe", "/v1beta/models/gemini-3.5-flash-lite"]);
+	});
+
+	it("names the polish model when Google has no such model", async () => {
+		expect(await both(fake.key, "gemini-3.5-transcribe", "gemini-0-nonesuch")).toEqual({
+			outcome: "unknown model",
+			sentence: checkUnknownPolishModel("gemini-0-nonesuch"),
+		});
+	});
+
+	it("a refused key is said once, without checking the polish model", async () => {
+		const before = fake.requests.length;
+		expect(await both("wrong-key-not-a-secret", "gemini-3.5-transcribe", "gemini-3.5-flash-lite")).toEqual({ outcome: "refused", sentence: CHECK_REFUSED });
+		expect(fake.requests.length).toBe(before + 1);
 	});
 });

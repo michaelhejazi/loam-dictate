@@ -1,9 +1,10 @@
 // The sheet: an Obsidian Modal, which is a bottom sheet on a phone. It draws
-// the session's phase (design/dictate-sheet.html has all six) and forwards
+// the session's phase (design/dictate-sheet.html has all seven) and forwards
 // the buttons. Words land only on Insert; any other way out throws the take away.
 
 import { App, Editor, MarkdownFileInfo, MarkdownView, Modal, Notice, TFile } from "obsidian";
 import { insertAtCursor } from "./insert";
+import { POLISH_LEVELS, PolishLevel, Polished } from "./polish";
 import { DictationSession, Phase, SessionDeps } from "./session";
 
 export interface Target {
@@ -110,17 +111,30 @@ export class DictateModal extends Modal {
 				this.actions(el, [["Cancel", "quiet", () => this.close()]]);
 				this.drawWave(true);
 				break;
+			case "polishing":
+				this.head(el, "quiet", "Polishing…", true);
+				this.clock(el, fmt(p.durationMs), null, false).addClass("is-faint");
+				this.wave(el, true);
+				this.hint(el, `${POLISH_LEVELS[p.level]} polish · names from the terms note`, false);
+				this.actions(el, [
+					["Cancel", "quiet", () => this.close()],
+					["Skip", "quiet", () => this.session.skipPolish()],
+				]);
+				this.drawWave(true);
+				break;
 			case "ready": {
 				this.head(el, "quiet", "Ready");
 				el.createDiv({ cls: "spoken-text", text: p.text });
 				const meta = el.createDiv({ cls: "spoken-meta" });
-				meta.createSpan({ text: `${words(p.text)} ${plural(words(p.text), "word")} · ${fmt(p.durationMs)}` });
+				meta.createSpan({ text: `${words(p.text)} ${plural(words(p.text), "word")} · ${fmt(p.durationMs)} · ${polishLabel(p.polish)}` });
 				if (!p.targetGone) {
-					const retake = meta.createEl("a", { cls: "spoken-link", text: "Retake", href: "#" });
-					retake.addEventListener("click", (ev) => {
-						ev.preventDefault();
-						void this.session.retake();
-					});
+					const links = meta.createSpan({ cls: "spoken-links" });
+					// The other levels for this take: each re-polishes the kept transcript.
+					for (const level of otherLevels(p.polish)) {
+						this.link(links, POLISH_LEVELS[level], () => void this.session.repolish(level));
+					}
+					this.link(links, "Retake", () => void this.session.retake());
+					if (!p.polish.ran) el.createDiv({ cls: "spoken-polish-note", text: `Polish did not run: ${p.polish.why}. This is the transcript as heard.` });
 					this.actions(el, [
 						["Discard", "quiet", () => this.close()],
 						["Insert", "primary", () => this.insert(p.text)],
@@ -159,6 +173,14 @@ export class DictateModal extends Modal {
 		// Room for Obsidian's close button, which sits over this end of the row (styles.css).
 		const into = head.createDiv({ cls: ["spoken-into", "spoken-beside-close"], text: "into " });
 		into.createEl("b", { text: this.target.file.basename });
+	}
+
+	private link(el: HTMLElement, text: string, fn: () => void): void {
+		const a = el.createEl("a", { cls: "spoken-link", text, href: "#" });
+		a.addEventListener("click", (ev) => {
+			ev.preventDefault();
+			fn();
+		});
 	}
 
 	private clock(el: HTMLElement, now: string, cap: string | null, amber: boolean): HTMLElement {
@@ -271,6 +293,19 @@ export class DictateModal extends Modal {
 			new Notice("Spoken: couldn't copy. Select the text in the sheet and copy it by hand.");
 		}
 	}
+}
+
+/** What the meta line says ran: "Light polish", "Polish off", or "Not polished" when it fell back. */
+export function polishLabel(p: Polished): string {
+	if (!p.ran) return "Not polished";
+	return p.level === "off" ? "Polish off" : `${POLISH_LEVELS[p.level]} polish`;
+}
+
+/** The levels offered on the Ready card: all but the one that ran; all of Light and Full when none did. */
+export function otherLevels(p: Polished): PolishLevel[] {
+	const all = Object.keys(POLISH_LEVELS) as PolishLevel[];
+	if (!p.ran) return all.filter((l) => l !== "off");
+	return all.filter((l) => l !== p.level);
 }
 
 function fmt(ms: number): string {

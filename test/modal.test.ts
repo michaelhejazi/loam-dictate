@@ -62,8 +62,9 @@ const PHASES: Phase[] = [
 	{ kind: "recording", elapsedMs: 12_000, warning: false },
 	{ kind: "recording", elapsedMs: 95_000, warning: true },
 	{ kind: "cleaning", durationMs: 12_000, terms: 3 },
-	{ kind: "ready", text: "Words.", biased: true, durationMs: 12_000, targetGone: false },
-	{ kind: "ready", text: "Words.", biased: true, durationMs: 12_000, targetGone: true },
+	{ kind: "polishing", durationMs: 12_000, level: "light" },
+	{ kind: "ready", text: "Words.", biased: true, durationMs: 12_000, targetGone: false, polish: { text: "Words.", level: "light", ran: true } },
+	{ kind: "ready", text: "Words.", biased: true, durationMs: 12_000, targetGone: true, polish: { text: "Words.", level: "light", ran: true } },
 	{ kind: "failed", message: "No signal.", durationMs: 12_000, takeKept: true },
 ];
 
@@ -103,5 +104,56 @@ describe("the sheet's header", () => {
 		const rule = /\.modal\.spoken-modal \.spoken-into\.spoken-beside-close \{([^}]*)\}/.exec(css);
 		expect(rule?.[1]).toMatch(/margin-inline-end: var\(--size-4-12, 48px\);/);
 		expect(css).not.toMatch(/modal-close-button|modal-header-button/);
+	});
+});
+
+/** Every text under an element, in order. */
+const texts = (e: El): string[] => [e.text, ...e.children.flatMap(texts)].filter(Boolean);
+const find = (e: El, cls: string): El | undefined => (e.cls.includes(cls) ? e : e.children.map((c) => find(c, cls)).find(Boolean));
+
+describe("Polish on the sheet", () => {
+	const ready = (polish: Extract<Phase, { kind: "ready" }>["polish"], text = "Tell Flio hello."): Phase => ({
+		kind: "ready",
+		text,
+		biased: true,
+		durationMs: 42_000,
+		targetGone: false,
+		polish,
+	});
+
+	it("Polishing: a spinner, the level in the hint, Cancel and Skip", () => {
+		const sheet = draw({ kind: "polishing", durationMs: 42_000, level: "full" });
+		expect(texts(sheet.children[0])).toContain("Polishing…");
+		expect(find(sheet, "spoken-spin")).toBeDefined();
+		expect(find(sheet, "spoken-hint")!.text).toBe("Full polish · names from the terms note");
+		expect(texts(find(sheet, "spoken-actions")!)).toEqual(["Cancel", "Skip"]);
+	});
+
+	it("Ready after Light: the meta line says Light polish and offers Off and Full, then Retake", () => {
+		const meta = find(draw(ready({ text: "Tell Flio hello.", level: "light", ran: true })), "spoken-meta")!;
+		expect(meta.children[0].text).toBe("3 words · 0:42 · Light polish");
+		expect(texts(find(meta, "spoken-links")!)).toEqual(["Off", "Full", "Retake"]);
+	});
+
+	it("Ready with polish off: offers Light and Full", () => {
+		const meta = find(draw(ready({ text: "tell fleo hello", level: "off", ran: true }, "tell fleo hello")), "spoken-meta")!;
+		expect(meta.children[0].text).toBe("3 words · 0:42 · Polish off");
+		expect(texts(find(meta, "spoken-links")!)).toEqual(["Light", "Full", "Retake"]);
+	});
+
+	it("Ready after a fallback: Not polished, a quiet line saying why, and Light and Full to try again", () => {
+		const sheet = draw(ready({ text: "tell fleo hello", level: "light", ran: false, why: "Gemini took too long" }, "tell fleo hello"));
+		const meta = find(sheet, "spoken-meta")!;
+		expect(meta.children[0].text).toBe("3 words · 0:42 · Not polished");
+		expect(texts(find(meta, "spoken-links")!)).toEqual(["Light", "Full", "Retake"]);
+		expect(find(sheet, "spoken-polish-note")!.text).toBe("Polish did not run: Gemini took too long. This is the transcript as heard.");
+		expect(find(sheet, "spoken-err")).toBeUndefined();
+		expect(texts(find(sheet, "spoken-actions")!)).toEqual(["Discard", "Insert"]);
+	});
+
+	it("the design file draws the Polishing state", () => {
+		const html = readFileSync("design/dictate-sheet.html", "utf8");
+		expect(html).toMatch(/Polishing…/);
+		expect(html).toMatch(/Light polish/);
 	});
 });

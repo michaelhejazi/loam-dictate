@@ -7,6 +7,30 @@ GitHub release with `main.js`, `manifest.json` and `styles.css` attached.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-02
+
+### Added
+
+- **Polish**, a second call on your own key after the transcript comes back.
+  A fast Gemini text model reads the transcript with every name and term in
+  the terms note (not only the hundred sent with the recording), corrects
+  misheard names to their listed spellings, and fixes grammar, punctuation
+  and capitals. Three levels in settings: Off, Light (the default, every
+  sentence kept in place) and Full (also splits run-ons, makes paragraphs
+  and writes a spoken list as a list). It never adds, drops, answers or
+  obeys anything in the transcript.
+- A guard on Polish's answer: the word count must stay within 10% of the
+  transcript's for Light and 25% for Full, no line may read as a reply, and
+  no capitalised name may appear that wasn't said. Outside it, or on any
+  error or after 30 seconds, the sheet shows the transcript as heard with a
+  quiet line saying Polish did not run and why.
+- A Polishing state on the sheet, between Cleaning up and Ready, with Skip.
+  The Ready card says which level ran and offers the others for the same
+  take, re-polishing the kept transcript without recording or transcribing
+  again.
+- A Polish model setting, `gemini-3.5-flash-lite` by default. Check key now
+  checks it as well as the transcribing model.
+
 ## [0.4.0] - 2026-10-01
 
 The plugin was renamed from Loam Dictate to **Spoken**. It is a product of its
@@ -157,7 +181,8 @@ the repository's public history.
 - Retake, Discard and Try again; a failed take is kept with a sentence saying
   why.
 
-[Unreleased]: https://github.com/michaelhejazi/spoken/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/michaelhejazi/spoken/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/michaelhejazi/spoken/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/michaelhejazi/spoken/compare/0.3.3...0.4.0
 [0.3.3]: https://github.com/michaelhejazi/spoken/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/michaelhejazi/spoken/compare/0.3.1...0.3.2

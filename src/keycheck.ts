@@ -1,5 +1,5 @@
 // The settings tab's Check key: one small request that proves both the key and
-// the model name. GET .../v1beta/models/{model} reads the model's own record;
+// the model name, and a second for the polish model (src/polish.ts). GET .../v1beta/models/{model} reads the model's own record;
 // it costs no tokens, and Google answers it only for a key it accepts and a
 // model it has. docs/gemini-request.md describes it beside the take's request.
 
@@ -24,6 +24,10 @@ export const CHECK_UNREACHABLE = "Google couldn't be reached. Check the connecti
 export const checkWorks = (model: string) => `The key works, and the model ${model} exists.`;
 export const checkUnknownModel = (model: string) =>
 	`The key works, but Google has no model called "${model}". Check the model name.`;
+export const checkBothWork = (model: string, polishModel: string) =>
+	`The key works, and the models ${model} and ${polishModel} exist.`;
+export const checkUnknownPolishModel = (polishModel: string) =>
+	`The key works, but Google has no model called "${polishModel}". Check the polish model name.`;
 
 /** The request Check key sends. The key goes in a header, never in the URL. */
 export function keyCheckRequest(key: string, model: string, base = MODELS_ENDPOINT): HttpRequest {
@@ -43,7 +47,19 @@ export async function checkGeminiKey(
 	waitMs = CHECK_WAIT_MS,
 	/** Tests point this at test/fake-gemini.mjs; the plugin never changes it. */
 	base = MODELS_ENDPOINT,
+	/** Checked after the transcribing model, in the same press, when given. */
+	polishModel?: string,
 ): Promise<KeyCheck> {
+	const first = await checkModel(key, model, http, waitMs, base);
+	const polish = polishModel?.trim();
+	if (first.outcome !== "works" || !polish) return first;
+	const second = await checkModel(key, polish, http, waitMs, base);
+	if (second.outcome === "works") return { outcome: "works", sentence: checkBothWork(model.trim() || DEFAULT_MODEL, polish) };
+	if (second.outcome === "unknown model") return { outcome: "unknown model", sentence: checkUnknownPolishModel(polish) };
+	return second;
+}
+
+async function checkModel(key: string, model: string, http: HttpClient, waitMs: number, base: string): Promise<KeyCheck> {
 	const name = model.trim() || DEFAULT_MODEL;
 	if (!key.trim()) return { outcome: "no key", sentence: CHECK_NO_KEY };
 	let res;

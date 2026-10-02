@@ -154,10 +154,23 @@
 }
 .spoken-meta {
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-between;
+	gap: 4px 12px;
 	font-size: var(--font-ui-small);
 	color: var(--text-faint);
 	margin: 0 2px 14px;
+}
+/* The other polish levels and Retake, as quiet links at the meta line's end. */
+.spoken-links {
+	display: flex;
+	gap: 12px;
+}
+/* Polish fell back: said once, quietly, not as an error. */
+.spoken-polish-note {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	margin: -8px 2px 14px;
 }
 .spoken-link {
 	color: var(--text-muted);

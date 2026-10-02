@@ -69,10 +69,63 @@ of `type: "model_output"`, joined in order and trimmed. A `status` other than
 vocabulary, the plugin sends the same take once more without
 `custom_vocabulary` and reports `biased: false`. It does not retry again.
 
+## Polish
+
+When Polish is Light or Full (the setting, Light by default), the transcript
+goes back to Gemini as text, once per take and once for each level chosen on
+the Ready card. `src/polish.ts` implements it.
+
+*The model was chosen 2026-10-02 from Google's
+[models page](https://ai.google.dev/gemini-api/docs/models) (last updated
+2026-10-01): `gemini-3.5-flash-lite`, stable, "our fastest, most
+cost-effective 3.5 model"; its
+[model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite)
+calls it "low-latency, cost-effective". The text form of the request follows the
+[Interactions API reference](https://ai.google.dev/api/interactions-api):
+`input` as a string, `system_instruction` a string, `store` a boolean.*
+
+```
+POST https://generativelanguage.googleapis.com/v1beta/interactions
+x-goog-api-key: <the user's key>
+Content-Type: application/json
+
+{
+  "model": "gemini-3.5-flash-lite",
+  "system_instruction": "<polishPrompt(level)>",
+  "input": "<terms>\nSimin\nFlio\n…\n</terms>\n\n<transcript>\n…\n</transcript>",
+  "store": false
+}
+```
+
+- `model` is the Polish model setting, `gemini-3.5-flash-lite` when blank.
+- `system_instruction` is `polishPrompt("light")` or `polishPrompt("full")`,
+  the one place the prompt is written.
+- The terms are every term in the terms note, then the open note's title and
+  headings, each once (`allTerms()` in `src/vocabulary.ts`). No cap: the
+  hundred applies to the recording's `custom_vocabulary` only.
+- `store: false` asks Google not to keep the interaction.
+- The plugin waits up to 30 s. No `thinking_level` is sent; the model's
+  default applies.
+
+The answer is read like a transcript (every `model_output` text, in order);
+a reply wrapped in `<transcript>` tags is unwrapped. It is then guarded, and
+shown only if it passes:
+
+| Check | Light | Full |
+|---|---|---|
+| Word count (words have a letter or digit, so list dashes don't count) within this fraction of the transcript's | 10% | 25% |
+| No line opening like a reply ("Sure,", "Here's the polished transcript", "As an AI", a `<transcript>` tag…) unless the transcript itself has those words | ✓ | ✓ |
+| No capitalised word that is in neither the transcript nor the terms (an answer such as "Paris.") | ✓ | ✓ |
+
+Any error, a status other than `completed`, no answer within 30 s, or a failed
+check shows the transcript as heard, with "Polish did not run: *why*." Polish
+never makes a take fail.
+
 ## Check key
 
-Settings → Check key sends one request, which proves the key and the model
-name together without spending tokens: it reads the model's own record
+Settings → Check key sends one request per model, which proves the key and the
+model names together without spending tokens. It checks the transcribing model
+first and, if that works, the Polish model in the same press: it reads the model's own record
 ([models.get](https://ai.google.dev/api/models), read 2026-10-01).
 `src/keycheck.ts` implements it; the fake serves it too.
 

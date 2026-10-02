@@ -260,6 +260,21 @@ describe("the provider's fields", () => {
 		expect(row("Model").desc).toMatch(/speech-to-text/);
 	});
 
+	it("Polish is Off, Light or Full, Light by default, with its model beside it", async () => {
+		const settings: Settings = { ...DEFAULT_SETTINGS };
+		const { t } = tab(settings);
+		expect(row("Polish").controls[0]).toMatchObject({ kind: "dropdown", value: "light", options: ["off", "light", "full"] });
+		expect(row("Polish").desc).toMatch(/second call on your key/);
+		expect(row("Polish model").controls[0].value).toBe("gemini-3.5-flash-lite");
+		await t.setControlValue("polishModel", "  ");
+		expect(settings.polishModel).toBe("gemini-3.5-flash-lite");
+	});
+
+	it("a saved polish level this version doesn't have becomes Light", () => {
+		expect(upgradeSettings({ polish: "loud" })).toMatchObject({ settings: { polish: "light" }, changed: true });
+		expect(upgradeSettings({ polish: "full" })).toMatchObject({ settings: { polish: "full" }, changed: false });
+	});
+
 	it("the terms note is one path setting with an Open button, and no in-settings list", () => {
 		const { plugin } = tab({ ...DEFAULT_SETTINGS });
 		expect(row("Names and terms note").controls.map((c) => [c.kind, c.value])).toEqual([
